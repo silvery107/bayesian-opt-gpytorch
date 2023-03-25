@@ -1,1 +1,1 @@
-# -bayesian-opt-gpytorch
+# GPs for Bayesian Optimization
