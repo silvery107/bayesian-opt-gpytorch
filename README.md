@@ -1,6 +1,8 @@
 # GPs for Bayesian Optimization
 Bayesian optimization is a sequential design strategy for global optimization of black-box functions that does not assume any functional forms. In this project you will use Gaussian Process (GP) models to perform Bayesian Optimization of the parameters of Model Predictive Path Integral (MPPI) controller for a pushing task. 
 
+<ins>Due data</ins>: **April 21** for code and demo | **April 24** for presentation
+
 ## TODOs
 
 1.  **Setup Task Environment**
