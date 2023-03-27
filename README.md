@@ -33,6 +33,19 @@ Bayesian optimization is a sequential design strategy for global optimization of
 - GPytorch >= 1.9.1
 
 ## Reference
+**BOA Algorithm**
+
+<img src="figures/boa_pseudo.png" width="500">
+
+> f: objective function
+> X: support of variables
+> S: acquisition function
+> M: GP model
+> D: dataset
+> x: variable
+> y: observation
+
+
 **Github Repository**
 - [Bayesian machine learning notebooks](https://github.com/krasserm/bayesian-machine-learning) 1.6k
 - [Python implementation of bayesian global optimization](https://github.com/fmfn/BayesianOptimization) 6.6k
