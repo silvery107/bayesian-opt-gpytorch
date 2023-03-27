@@ -47,12 +47,12 @@ def ts_gp_animation_ackley(ts_gp, max_rounds, X, Y, output_dir=None):
 
         
         # adding to dict
-        round_dict[round_id] = {'X_observed': X_observed, 
-                                'y_observed': y_observed, 
-                                'X_grid': X_grid,
-                                'posterior_sample': posterior_sample,
-                                'posterior_mean': posterior_mean,
-                                'posterior_std': posterior_std}
+        round_dict[round_id] = {'X_observed': X_observed.numpy(), 
+                                'y_observed': y_observed.numpy(), 
+                                'X_grid': X_grid.numpy(),
+                                'posterior_sample': posterior_sample.numpy(),
+                                'posterior_mean': posterior_mean.numpy(),
+                                'posterior_std': posterior_std.numpy()}
     print(f"Time Elapsed: {time()-start_time:.4f} s")
     # plotting!
     fig, ax = plt.subplots(figsize=[10,4], dpi=150)
