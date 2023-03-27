@@ -37,13 +37,13 @@ Bayesian optimization is a sequential design strategy for global optimization of
 
 <img src="figures/boa_pseudo.png" width="500">
 
-> f: objective function
-> X: support of variables
-> S: acquisition function
-> M: GP model
-> D: dataset
-> x: variable
-> y: observation
+> f: objective function <br>
+> X: support of variables <br>
+> S: acquisition function <br>
+> M: GP model <br>
+> D: dataset <br>
+> x: variable <br>
+> y: observation <br>
 
 
 **Github Repository**
