@@ -31,6 +31,7 @@ class Matern_GP(ExactGP):
     def forward(self, x):
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
+        # print(f"mean_x: {mean_x.shape}, covar_x: {covar_x.shape}")
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
 
 
