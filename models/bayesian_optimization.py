@@ -5,12 +5,44 @@ import gpytorch
 from models.thompson_sampling import MultiTaskThompsonSampling
 from models.gp_models import Matern_GP, train_gp_hyperparams
 from torch.distributions.uniform import Uniform
+from torch.distributions import Normal
+
+
+class AcquisitionFunction:
+    def __init__(self, mode="random") -> None:
+        """
+        mode: {"random", "ei"}
+            * "random" is the Random Sample from GP distribution method
+            * "ei" is the Expected Improvement method
+        """
+        if mode not in ["random", "ei"]:
+            err = "The acquisition function " \
+                  "{} has not been implemented, " \
+                  "please choose one of random or ei.".format(mode)
+            raise NotImplementedError(err)
+        self.mode = mode
+        self.norm = Normal(0., 1.)
+    
+    def apply(self, pred_distrib, y_min):
+        if self.mode == "random":
+            return self._random(pred_distrib)
+        else:
+            return self._ei(pred_distrib, y_min)
+
+    def _random(self, distrib):
+        return distrib.sample()
+
+    def _ei(self, distrib, y_min):
+        a = (distrib.mean + y_min)
+        z = a / (distrib.stddev)
+        return a * self.norm.cdf(z) + distrib.stddev * self.norm.log_prob(z).exp()
 
 
 class BayesianOptimization:
-    def __init__(self, lower_bounds:torch.Tensor, upper_bounds:torch.Tensor, seed=42, n_warmup=50, n_grid_pt=1000, dtype=torch.float32, device="cpu"):
+    def __init__(self, lower_bounds:torch.Tensor, upper_bounds:torch.Tensor, acq_mode="ei", seed=42, n_warmup=50, n_grid_pt=1000, dtype=torch.float32, device="cpu"):
         self.model = None
         self.likelihood = None
+        self.acq = AcquisitionFunction(mode=acq_mode)
         assert lower_bounds.shape == upper_bounds.shape
         if not lower_bounds.shape:
             self.X_bounds = torch.stack([lower_bounds.unsqueeze(0), 
@@ -70,9 +102,11 @@ class BayesianOptimization:
             self.fit_model(self._X, self._y)
             # 2. Draw one sample (a function) from the surrogate function3
             X_grid = self.X_distrib.sample([self.n_grid_pt]) # (R, N)
-            posterior_sample = self.surrogate(X_grid)
+            pred_obs_distrib = self.surrogate(X_grid)
             # 3. Choose next point as the optimum of the sample
-            which_min = torch.argmin(posterior_sample) # (1, )
+            pred_obs_func = self.acq.apply(pred_obs_distrib, self._minimum) # (R, )
+            which_min = torch.argmin(pred_obs_func) # (1, )
+            
             next_sample = X_grid[which_min] # (N, )
         
         self._X_last = next_sample
@@ -104,10 +138,10 @@ class BayesianOptimization:
         self.model.eval()
         self.likelihood.eval()
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
-            pred_obs = self.likelihood(self.model(X))
-            posterior_sample = pred_obs.sample() # (R, )
+            pred_obs_distrib = self.likelihood(self.model(X))
+            # posterior_sample = pred_obs.sample() # (R, )
         
-        return posterior_sample
+        return pred_obs_distrib
 
     def get_result(self):
         return self._X_best.detach().cpu().numpy(), self._minimum.item()
