@@ -9,30 +9,30 @@ from torch.distributions import Normal
 
 
 class AcquisitionFunction:
-    def __init__(self, mode="random") -> None:
+    def __init__(self, mode="ts") -> None:
         """
-        mode: {"random", "ei"}
-            * "random" is the Random Sample from GP distribution method
+        mode: {"ts", "ei"}
+            * "ts" is the Thompson Sampling method
             * "ei" is the Expected Improvement method
         """
-        if mode not in ["random", "ei"]:
+        if mode not in ["ts", "ei"]:
             err = "The acquisition function " \
                   "{} has not been implemented, " \
-                  "please choose one of random or ei.".format(mode)
+                  "please choose one of ts or ei.".format(mode)
             raise NotImplementedError(err)
         self.mode = mode
         self.norm = Normal(0., 1.)
     
     def apply(self, pred_distrib, y_min):
-        if self.mode == "random":
-            return self._random(pred_distrib)
+        if self.mode == "ts":
+            return self._thompson_sampling(pred_distrib)
         else:
-            return self._ei(pred_distrib, y_min)
+            return self._expected_improvement(pred_distrib, y_min)
 
-    def _random(self, distrib):
+    def _thompson_sampling(self, distrib):
         return distrib.sample()
 
-    def _ei(self, distrib, y_min):
+    def _expected_improvement(self, distrib, y_min):
         a = (distrib.mean + y_min)
         z = a / (distrib.stddev)
         return a * self.norm.cdf(z) + distrib.stddev * self.norm.log_prob(z).exp()
