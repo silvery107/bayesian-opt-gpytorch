@@ -90,7 +90,7 @@ class ThompsonSampling:
         
 class MultiTaskThompsonSampling:
     # initialization
-    def __init__(self, n_random_draws, objective, bounds, interval_resolution=1000, noise_level=1e-3, dtype=torch.float, device="cpu"):
+    def __init__(self, n_random_draws, objective, bounds, interval_resolution=1000, noise_level=1e-3, dtype=torch.float32, device="cpu"):
 
         # number of random samples before starting the optimization
         self.n_random_draws = n_random_draws 
@@ -115,7 +115,8 @@ class MultiTaskThompsonSampling:
         self.num_tasks = self.X_bounds.shape[0] # (N, )
         # grid search for points to evaluate
         self.X_distrib = Uniform(self.X_bounds[:, 0], self.X_bounds[:, 1])
-        self.X_grid = self.X_distrib.sample([interval_resolution]) # (R, N)
+        # self.X_grid = self.X_distrib.sample([interval_resolution]) # (R, N)
+        self.X_grid = None
         
         # initializing our design matrix and target variable
         self.X = None # (D, N)
@@ -168,6 +169,7 @@ class MultiTaskThompsonSampling:
             # 2. Draw one sample (a function) from the posterior
             self.gp.eval()
             self.likelihood.eval()
+            self.X_grid = self.X_distrib.sample([self.interval_resolution]) # (R, N)
             with torch.no_grad(), gpytorch.settings.fast_pred_var():
                 pred_obs = self.likelihood(self.gp(self.X_grid))
                 posterior_sample = pred_obs.sample() # (R, )
@@ -182,12 +184,12 @@ class MultiTaskThompsonSampling:
         
             # let us observe the objective and append this new data to our X and y
             next_observation = self.objective(next_sample) # (1, )
+            # TODO clip next_sample within bounds to ensure numerical stability
             if next_observation < self.minimum:
                 self.minimum = next_observation
                 self.X_best = next_sample
             self.X = torch.cat([self.X, next_sample[None, :]], dim=0)
             self.y = torch.cat([self.y, torch.atleast_1d(next_observation)], dim=0)
-            self.X_grid = self.X_distrib.sample([self.interval_resolution]) # (R, N)
         
         return self.X, self.y
     
