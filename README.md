@@ -11,6 +11,7 @@ Bayesian optimization is a sequential design strategy for global optimization of
 
 - [ ] **Implement Bayesian Optimization Algorithm**
     - [x] Implement 1d Bayesian opt algo using Thompson sampling under `<models>`, run `python tests/test_tsgp.py` for testing.
+    - [x] Implement Bayes opt algo for multi-dimensional inputs
     
     - [ ] Apply Bayesian Optimization to determine a good set of parameters for MPPI for performing a variety of pushing tasks. 
 
