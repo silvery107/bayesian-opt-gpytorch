@@ -2,8 +2,9 @@ import torch
 import numpy as np
 import random
 import gpytorch
-from models.thompson_sampling import MultiTaskThompsonSampling
-from models.gp_models import Matern_GP, train_gp_hyperparams
+
+from optimizer.thompson_sampling import MultiTaskThompsonSampling
+from model.gp_models import Matern_GP, train_gp_hyperparams
 from torch.distributions.uniform import Uniform
 from torch.distributions import Normal
 

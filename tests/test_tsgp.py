@@ -5,7 +5,7 @@ import inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 os.sys.path.insert(0, parentdir)
-from models.thompson_sampling import ThompsonSampling, MultiTaskThompsonSampling
+from optimizer.thompson_sampling import ThompsonSampling, MultiTaskThompsonSampling
 
 # importing necessary modules
 import numpy as np
@@ -81,7 +81,7 @@ def ts_gp_animation_ackley(ts_gp, max_rounds, X, Y, output_dir=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dim", type=int, default=1, required=True, choices=[1, 2])
+    parser.add_argument("--dim", type=int, default=1, required=False, choices=[1, 2])
     parser.add_argument("--step", type=int, default=50, required=False)
     args = parser.parse_args()
 

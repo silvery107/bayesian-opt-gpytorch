@@ -1,7 +1,7 @@
 import torch
 import gpytorch
 import numpy as np
-from models.gp_models import Matern_GP, train_gp_hyperparams
+from model.gp_models import Matern_GP, train_gp_hyperparams
 from torch.distributions.uniform import Uniform
 
 # TS-GP optimizer
