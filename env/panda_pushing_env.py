@@ -288,6 +288,9 @@ class PandaPushingEnv(gym.Env):
                     self.visualizer.set_data(rgb_img)
         else:
             pass
+    
+    def disconnect(self):
+        p.disconnect()
 
 class PandaBoxPushingEnv(PandaPushingEnv):
 
