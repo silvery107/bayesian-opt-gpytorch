@@ -199,6 +199,21 @@ class MPPI():
         self.states = None
         self.actions = None
 
+    def set_parameters(self, parameters):
+        self.lambda_ = parameters[0]
+        if torch.is_tensor(parameters):
+            noise_sigma_diag = parameters[1:4].clone().detach().to(dtype=self.dtype, device=self.d)
+        else:
+            noise_sigma_diag = torch.tensor(parameters[1:4]).to(dtype=self.dtype, device=self.d)
+        self.noise_sigma = torch.diag_embed(noise_sigma_diag)
+        self.noise_sigma_inv = torch.inverse(self.noise_sigma)  
+        self.noise_dist = MultivariateNormal(self.noise_mu, covariance_matrix=self.noise_sigma)
+        # if self.U is None:
+        #     self.U = self.noise_dist.sample((self.T,))
+    
+    def get_cost_total(self):
+        return self.cost_total.detach().cpu().numpy()
+
     @handle_batch_input(n=2)
     def _dynamics(self, state, u, t):
         return self.F(state, u, t) if self.step_dependency else self.F(state, u)

@@ -64,18 +64,17 @@ class PushingController(object):
         # --- Your code here
         state_tensor = torch.from_numpy(state)
         action_tensor = self.mppi.command(state_tensor)
-        action = action_tensor.detach().numpy()
+        action = action_tensor.detach().cpu().numpy()
+        action = action.clip(self.env.action_space.low, self.env.action_space.high)
         # ---
         return action
 
-    def set_hyper(self, hyperparameters):
+    def set_parameters(self, hyperparameters):
         # ---
-        self.mppi.set_hyper(hyperparameters)
+        self.mppi.set_parameters(hyperparameters)
 
-    def get_cost(self):
-        return self.mppi.get_cost()
-
-
+    def get_cost_total(self):
+        return self.mppi.get_cost_total()
 
 
 def free_pushing_cost_function(state, action):
