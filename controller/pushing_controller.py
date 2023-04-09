@@ -17,7 +17,7 @@ class PushingController(object):
 
     def __init__(self, env, model, cost_function, num_samples=100, horizon=10):
         self.env = env
-        self.model = model
+        self.model = model.eval()
         self.target_state = None
         state_dim = env.observation_space.shape[0]
         u_min = torch.from_numpy(env.action_space.low)
@@ -45,7 +45,8 @@ class PushingController(object):
         """
         next_state = None
         # --- Your code here
-        next_state = self.model(state, action)
+        with torch.no_grad():
+            next_state = self.model(state, action)
         # print(next_state.shape,'next_state')
         # ---
         return next_state

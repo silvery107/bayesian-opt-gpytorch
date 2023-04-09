@@ -43,13 +43,14 @@ if __name__ == "__main__":
         # cma test example
         initial_mean = [0, 0, 0, 0]
         initial_sigma = 0.5
-        optimizer = cma.CMAEvolutionStrategy(initial_mean, initial_sigma, {'bounds': [0, 1], 'popsize': 2})
+        popsize = 8 # 2
+        optimizer = cma.CMAEvolutionStrategy(initial_mean, initial_sigma, {'bounds': [0, 1], 'popsize': popsize})
 
         for _ in range(args.epoch):
             start_state = env.reset()
             state = start_state
             for _ in tqdm(range(args.step)):
-                parameters = optimizer.ask(number=2)
+                parameters = optimizer.ask(number=popsize)
                 fit = []
                 for hyperparameter in parameters:
                     controller.set_parameters(hyperparameter)
