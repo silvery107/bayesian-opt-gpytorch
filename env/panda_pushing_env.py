@@ -11,8 +11,7 @@ import numpy as np
 from tqdm import tqdm
 import argparse
 
-hw_dir = os.path.dirname(os.path.abspath(__file__))
-assets_dir = os.path.join(hw_dir, 'assets')
+assets_dir = "assets"
 
 # Box Pushing Env
 BOX_SIZE = 0.1

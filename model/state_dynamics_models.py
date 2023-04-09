@@ -422,48 +422,45 @@ def train_dynamics_model(model, train_loader, val_loader, optimizer, loss_fn, nu
 
     return train_losses, val_losses
 
+if __name__ == "__main__":
+    # Backup for dynamics model training
+    # Train the dynamics model
+    # Load the collected data: 
+    model_path = 'assets/pretrained_models/'
+    collected_data = np.load(os.path.join(model_path, 'box_pushing_collected_data.npy'), allow_pickle=True)
 
-# Backup for dynamics model training
-# Train the dynamics model
-# Load the collected data: 
-model_path = 'assets/pretrained_models/'
-collected_data = np.load(os.path.join(model_path, 'box_pushing_collected_data.npy'), allow_pickle=True)
+    pushing_multistep_residual_dynamics_model = ResidualDynamicsModel(3, 3)
+    train_loader, val_loader = process_data_multiple_step(collected_data, batch_size=500)
 
-pushing_multistep_residual_dynamics_model = ResidualDynamicsModel(3, 3)
-train_loader, val_loader = process_data_multiple_step(collected_data, batch_size=500)
+    pose_loss = SE2PoseLoss(block_width=0.1, block_length=0.1)
+    pose_loss = MultiStepLoss(pose_loss, discount=0.9)
 
-pose_loss = SE2PoseLoss(block_width=0.1, block_length=0.1)
-pose_loss = MultiStepLoss(pose_loss, discount=0.9)
+    LR = 2e-4
+    NUM_EPOCHS = 1500
+    model = pushing_multistep_residual_dynamics_model
+    optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=1e-5)
+    train_losses, val_losses = train_dynamics_model(model, train_loader, val_loader, optimizer, pose_loss, NUM_EPOCHS)
 
-LR = 2e-4
-NUM_EPOCHS = 1500
-model = pushing_multistep_residual_dynamics_model
-optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=1e-5)
-train_losses, val_losses = train_dynamics_model(model, train_loader, val_loader, optimizer, pose_loss, NUM_EPOCHS)
+    loss_target = 5e-4
+    print(f"Training loss less than {loss_target}? {train_losses[-1]<loss_target}")
+    print(f"Validation loss less than {loss_target}? {val_losses[-1]<loss_target}")
 
-loss_target = 5e-4
-print(f"Training loss less than {loss_target}? {train_losses[-1]<loss_target}")
-print(f"Validation loss less than {loss_target}? {val_losses[-1]<loss_target}")
+    # Plot train loss and test loss:
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 3))
+    axes[0].plot(train_losses)
+    axes[0].grid()
+    axes[0].set_title('Train Loss')
+    axes[0].set_xlabel('Epochs')
+    axes[0].set_ylabel('Train Loss')
+    axes[0].set_yscale('log')
+    axes[1].plot(val_losses)
+    axes[1].grid()
+    axes[1].set_title('Validation Loss')
+    axes[1].set_xlabel('Epochs')
+    axes[1].set_ylabel('Validation Loss')
+    axes[1].set_yscale('log')
+    plt.show()
 
-# Plot train loss and test loss:
-fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 3))
-axes[0].plot(train_losses)
-axes[0].grid()
-axes[0].set_title('Train Loss')
-axes[0].set_xlabel('Epochs')
-axes[0].set_ylabel('Train Loss')
-axes[0].set_yscale('log')
-axes[1].plot(val_losses)
-axes[1].grid()
-axes[1].set_title('Validation Loss')
-axes[1].set_xlabel('Epochs')
-axes[1].set_ylabel('Validation Loss')
-axes[1].set_yscale('log')
-plt.show()
-
-# save model:
-save_path = os.path.join(model_path, 'pushing_multi_step_residual_dynamics_model.pt')
-torch.save(pushing_multistep_residual_dynamics_model.state_dict(), save_path)
-
-# ---
-# ============================================================
+    # save model:
+    save_path = os.path.join(model_path, 'pushing_multi_step_residual_dynamics_model.pt')
+    torch.save(pushing_multistep_residual_dynamics_model.state_dict(), save_path)
