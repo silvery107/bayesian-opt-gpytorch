@@ -107,6 +107,7 @@ class BayesianOptimization:
         self._X = torch.cat([self._X, self._X_last[None, :]], dim=0)
         self._y = torch.cat([self._y, torch.atleast_1d(y_new).to(dtype=self.dtype, device=self.device)], dim=0)
         if y_new < self._minimum:
+            print(f"Got new minimum {y_new}, update X_best with {self._X_last}")
             self._minimum = y_new
             self._X_best = self._X_last
 
