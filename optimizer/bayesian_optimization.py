@@ -3,7 +3,6 @@ import numpy as np
 import random
 import gpytorch
 
-from optimizer.thompson_sampling import MultiTaskThompsonSampling
 from model.gp_models import Matern_GP, train_gp_hyperparams
 from torch.distributions.uniform import Uniform
 from torch.distributions import Normal
@@ -75,15 +74,6 @@ class BayesianOptimization:
         self._model_lr = 0.1
         self._model_epoch = 50
         self.reset_seed(seed)
-
-
-    def minimize_tsgp(self, objective, n_iter:int):
-        optimizer = MultiTaskThompsonSampling(self.n_warmup, objective, self.X_bounds, self.n_grid_pt, dtype=self.dtype, device=self.device)
-        for _ in range(n_iter):
-            X, y = optimizer.choose_next_sample()
-
-        xval, fval = optimizer.get_result()
-        return xval, fval
     
     def minimize(self, objective, n_iter:int):
         assert n_iter > self.n_warmup
@@ -97,13 +87,13 @@ class BayesianOptimization:
 
     def opt_acq_once(self) -> torch.Tensor:
         if self._X.shape[0] <= self.n_warmup:
-            next_sample = self.sample_warmup()
+            next_sample = self._sample_warmup()
         else:
             # 1. Fit the GP to the observations we have
-            self.fit_model(self._X, self._y)
+            self._fit_model(self._X, self._y)
             # 2. Draw one sample (a function) from the surrogate function3
             X_grid = self.X_distrib.sample([self.n_grid_pt]) # (R, N)
-            pred_obs_distrib = self.surrogate(X_grid)
+            pred_obs_distrib = self._surrogate(X_grid)
             # 3. Choose next point as the optimum of the sample
             pred_obs_func = self.acq.apply(pred_obs_distrib, self._minimum) # (R, )
             which_min = torch.argmin(pred_obs_func) # (1, )
@@ -120,12 +110,12 @@ class BayesianOptimization:
             self._minimum = y_new
             self._X_best = self._X_last
 
-    def sample_warmup(self):
+    def _sample_warmup(self):
         # sample = (self.X_bounds[:, 1] - self.X_bounds[:, 0]) * torch.rand(self.num_tasks) + self.X_bounds[:, 0]
         sample = self.X_distrib.sample() # (N, )
         return sample
 
-    def fit_model(self, X, y):
+    def _fit_model(self, X, y):
         if self.model is None:
             self.model = Matern_GP(X, y).to(dtype=self.dtype, device=self.device)
             self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
@@ -135,7 +125,7 @@ class BayesianOptimization:
         # Train the GP
         train_gp_hyperparams(self.model, self.likelihood, self._X, self._y, lr=self._model_lr, iters=self._model_epoch)
 
-    def surrogate(self, X)->torch.Tensor:
+    def _surrogate(self, X)->torch.Tensor:
         self.model.eval()
         self.likelihood.eval()
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
