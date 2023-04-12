@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from controller.mppi import MPPI
 
@@ -34,7 +35,8 @@ class PushingController(object):
                          lambda_=lambda_value,
                          u_min=u_min,
                          u_max=u_max,
-                         device=device)
+                         device=device,
+                         noise_abs_cost=True)
         
         self.device = device
 
@@ -88,14 +90,12 @@ def free_pushing_cost_function(state, action):
     :param action: torch tensor of shape (B, state_size)
     :return: cost: torch tensor of shape (B,) containing the costs for each of the provided states
     """
-    target_pose = TARGET_POSE_FREE_TENSOR  # torch tensor of shape (3,) containing (pose_x, pose_y, pose_theta)
+    target_pose = TARGET_POSE_FREE_TENSOR.to(dtype=state.dtype, device=state.device)  # torch tensor of shape (3,) containing (pose_x, pose_y, pose_theta)
     cost = None
     # --- Your code here
-    x = state
+    state_diff = state - target_pose
     Q = torch.diag(torch.tensor([1, 1, 0.1], dtype=state.dtype, device=state.device))
-    cost = (x - target_pose) @ Q @ (x - target_pose).T #100x100
-    cost = cost.diagonal()  
-    # print(cost.shape)
+    cost = (state_diff @ Q @ state_diff.T).diagonal()
     # ---
     return cost
 
@@ -113,7 +113,6 @@ def collision_detection(state):
     in_collision = None
     # --- Your code here
     # tilde 1 for box, tilde 2 for obstacle
-    in_collision = [] 
     x2 = obstacle_centre[0]
     y2 = obstacle_centre[1]
     r_x1 = r_y1 = 0.5 * box_size
@@ -132,13 +131,13 @@ def collision_detection(state):
     sum_r_axis_y1 = r_y1 + r_y2 * cos_theta
     delta_axis_y2 = torch.abs(y1 - y2)
     sum_r_axis_y2 = r_y2 + r_y1 * cos_theta
-    in_collision_1 = (delta_axis_x1 < sum_r_axis_x1).float()
-    in_collision_2 = (delta_axis_y1 < sum_r_axis_y1).float()
-    in_collision_3 = (delta_axis_x2 < sum_r_axis_x2).float()
-    in_collision_4 = (delta_axis_y2 < sum_r_axis_y2).float()
+    in_collision_1 = (delta_axis_x1 < sum_r_axis_x1)
+    in_collision_2 = (delta_axis_y1 < sum_r_axis_y1)
+    in_collision_3 = (delta_axis_x2 < sum_r_axis_x2)
+    in_collision_4 = (delta_axis_y2 < sum_r_axis_y2)
     in_collision = in_collision_1 * in_collision_2 * in_collision_3 * in_collision_4
     # ---
-    return in_collision
+    return in_collision.float()
 
 
 def obstacle_avoidance_pushing_cost_function(state, action):
@@ -153,8 +152,27 @@ def obstacle_avoidance_pushing_cost_function(state, action):
     # --- Your code here
     x = state
     Q = torch.diag(torch.tensor([1, 1, 0.1], dtype=state.dtype, device=state.device))
-    cost = (x - target_pose) @ Q @ (x - target_pose).T #100x100
-    cost = cost.diagonal()
-    cost = cost + 100 * collision_detection(x)
+    state_diff = state - target_pose
+    cost = (state_diff @ Q @ state_diff.T).diagonal() + 100. * collision_detection(x)
     # ---
     return cost
+
+@torch.jit.script
+def tensor_linspace(start: torch.Tensor, stop: torch.Tensor, num: int):
+    """
+    Creates a tensor of shape [num, *start.shape] whose values are evenly spaced from start to end, inclusive.
+    Replicates but the multi-dimensional bahaviour of numpy.linspace in PyTorch.
+    """
+    # create a tensor of 'num' steps from 0 to 1
+    steps = torch.arange(num, dtype=torch.float32, device=start.device) / (num - 1)
+    
+    # reshape the 'steps' tensor to [-1, *([1]*start.ndim)] to allow for broadcastings
+    # - using 'steps.reshape([-1, *([1]*start.ndim)])' would be nice here but torchscript
+    #   "cannot statically infer the expected size of a list in this contex", hence the code below
+    for i in range(start.ndim):
+        steps = steps.unsqueeze(-1)
+    
+    # the output starts at 'start' and increments until 'stop' in each dimension
+    out = start[None] + steps*(stop - start)[None]
+    return out
+    
