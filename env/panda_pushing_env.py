@@ -36,6 +36,7 @@ class PandaPushingEnv(gym.Env):
         self.visualizer = visualizer
         self.include_obstacle = include_obstacle
         self.render_every_n_steps = render_every_n_steps
+        self.target_state = np.array([0.8, -0.1, 0.])
 
         if debug:
             p.connect(p.GUI)
@@ -305,7 +306,6 @@ class PandaBoxPushingEnv(PandaPushingEnv):
         else:
             p.connect(p.DIRECT, options="--opengl2")
         p.setAdditionalSearchPath(pd.getDataPath())
-
         self.episode_step_counter = 0
         self.episode_counter = 0
         self.frames = []
@@ -429,7 +429,7 @@ class PandaBoxPushingEnv(PandaPushingEnv):
         done = not self.observation_space.contains(state)
         at_goal = False
         if self.include_obstacle:
-            at_goal = np.sum((state - TARGET_POSE_OBSTACLES_BOX)**2) < 0.01
+            at_goal = np.sum((state - self.target_state)**2) < 0.01
         else:
             at_goal = np.sum((state - TARGET_POSE_FREE_BOX)**2) < 0.01
         done = done or at_goal
@@ -471,7 +471,7 @@ class PandaBoxPushingEnv(PandaPushingEnv):
         if self.include_obstacle:
             # with obstacles
             object_start_pose_planar = np.array([0.4, 0., -np.pi * 0.2])
-            object_target_pose_planar = TARGET_POSE_OBSTACLES_BOX
+            object_target_pose_planar = self.target_state
         else:
             # free of obstacles
             object_start_pose_planar = np.array([0.4, 0., np.pi * 0.2])

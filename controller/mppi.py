@@ -176,8 +176,8 @@ class MPPI():
         self.U = U_init
         self.u_init = u_init.to(self.d)
 
-        if self.U is None:
-            self.U = self.noise_dist.sample((self.T,))
+        # if self.U is None:
+        #     self.U = self.noise_dist.sample((self.T,))
 
         self.step_dependency = step_dependent_dynamics
         self.F = dynamics
@@ -208,8 +208,8 @@ class MPPI():
         self.noise_sigma = torch.diag_embed(noise_sigma_diag)
         self.noise_sigma_inv = torch.inverse(self.noise_sigma)  
         self.noise_dist = MultivariateNormal(self.noise_mu, covariance_matrix=self.noise_sigma)
-        # if self.U is None:
-        #     self.U = self.noise_dist.sample((self.T,))
+        if self.U is None:
+            self.U = self.noise_dist.sample((self.T,))
     
     def get_cost_total(self):
         return self.cost_total.detach().cpu().numpy()
@@ -318,12 +318,15 @@ class MPPI():
             # the actions with low noise if all states have the same cost. With abs(noise) we prefer actions close to the
             # nomial trajectory.
         else:
+
             action_cost = self.lambda_ * self.noise @ self.noise_sigma_inv  # Like original paper
 
         self.cost_total, self.states, self.actions = self._compute_rollout_costs(self.perturbed_action)
         self.actions /= self.u_scale
 
         # action perturbation cost
+        # print(self.cost_total)
+        # perturbation_cost = torch.sum(self.U * action_cost, dim=(1, 2))
         perturbation_cost = torch.sum(self.U * action_cost, dim=(1, 2))
         self.cost_total += perturbation_cost
         return self.cost_total

@@ -140,7 +140,7 @@ def collision_detection(state):
     return in_collision.float()
 
 
-def obstacle_avoidance_pushing_cost_function(state, action):
+def obstacle_avoidance_pushing_cost_function(state, action, target_state):
     """
     Compute the state cost for MPPI on a setup with obstacles.
     :param state: torch tensor of shape (B, state_size)
