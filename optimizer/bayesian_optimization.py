@@ -39,7 +39,7 @@ class AcquisitionFunction:
 
 
 class BayesianOptimization:
-    def __init__(self, lower_bounds:torch.Tensor, upper_bounds:torch.Tensor, acq_mode="ei", seed=42, n_warmup=50, n_grid_pt=1000, dtype=torch.float32, device="cpu"):
+    def __init__(self, lower_bounds:torch.Tensor, upper_bounds:torch.Tensor, acq_mode="ei", seed=42, n_warmup=5, n_grid_pt=10000, dtype=torch.float32, device="cpu"):
         self.model = None
         self.likelihood = None
         self.acq = AcquisitionFunction(mode=acq_mode)
@@ -78,14 +78,14 @@ class BayesianOptimization:
     def minimize(self, objective, n_iter:int):
         assert n_iter > self.n_warmup
         for _ in range(n_iter):
-            next_sample = self.opt_acq_once()
+            next_sample = self.suggest()
             next_objective = objective(next_sample)
-            self.update_objective(next_objective)
+            self.register(next_objective)
             
         xval, fval = self.get_result()
         return xval, fval
 
-    def opt_acq_once(self) -> torch.Tensor:
+    def suggest(self) -> torch.Tensor:
         if self._X.shape[0] <= self.n_warmup:
             next_sample = self._sample_warmup()
         else:
@@ -103,9 +103,9 @@ class BayesianOptimization:
         self._X_last = next_sample
         return next_sample.clamp(self.X_bounds[:, 0], self.X_bounds[:, 1])
 
-    def update_objective(self, y_new):
+    def register(self, y_new):
         self._X = torch.cat([self._X, self._X_last[None, :]], dim=0)
-        self._y = torch.cat([self._y, torch.atleast_1d(y_new)], dim=0)
+        self._y = torch.cat([self._y, torch.atleast_1d(y_new).to(dtype=self.dtype, device=self.device)], dim=0)
         if y_new < self._minimum:
             self._minimum = y_new
             self._X_best = self._X_last
