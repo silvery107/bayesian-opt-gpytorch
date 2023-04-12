@@ -15,9 +15,9 @@ class PushingController(object):
     You will just need to implement the dynamics and tune the hyperparameters and cost functions.
     """
 
-    def __init__(self, env, model, cost_function, num_samples=100, horizon=10):
+    def __init__(self, env, model, cost_function, num_samples=100, horizon=10, device="cpu"):
         self.env = env
-        self.model = model.eval()
+        self.model = model.eval().to(device)
         self.target_state = None
         state_dim = env.observation_space.shape[0]
         u_min = torch.from_numpy(env.action_space.low)
@@ -33,7 +33,10 @@ class PushingController(object):
                          noise_sigma=noise_sigma,
                          lambda_=lambda_value,
                          u_min=u_min,
-                         u_max=u_max)
+                         u_max=u_max,
+                         device=device)
+        
+        self.device = device
 
 
     def _compute_dynamics(self, state, action):
@@ -63,7 +66,7 @@ class PushingController(object):
         action = None
         state_tensor = None
         # --- Your code here
-        state_tensor = torch.from_numpy(state)
+        state_tensor = torch.from_numpy(state).to(self.device)
         action_tensor = self.mppi.command(state_tensor)
         action = action_tensor.detach().cpu().numpy()
         action = action.clip(self.env.action_space.low, self.env.action_space.high)
@@ -145,11 +148,11 @@ def obstacle_avoidance_pushing_cost_function(state, action):
     :param action: torch tensor of shape (B, state_size)
     :return: cost: torch tensor of shape (B,) containing the costs for each of the provided states
     """
-    target_pose = TARGET_POSE_OBSTACLES_TENSOR  # torch tensor of shape (3,) containing (pose_x, pose_y, pose_theta)
+    target_pose = TARGET_POSE_OBSTACLES_TENSOR.to(dtype=state.dtype, device=state.device)  # torch tensor of shape (3,) containing (pose_x, pose_y, pose_theta)
     cost = None
     # --- Your code here
     x = state
-    Q = torch.tensor([[1,0,0],[0,1,0],[0,0,0.1]], dtype=state.dtype, device=state.device)
+    Q = torch.diag(torch.tensor([1, 1, 0.1], dtype=state.dtype, device=state.device))
     cost = (x - target_pose) @ Q @ (x - target_pose).T #100x100
     cost = cost.diagonal()
     cost = cost + 100 * collision_detection(x)

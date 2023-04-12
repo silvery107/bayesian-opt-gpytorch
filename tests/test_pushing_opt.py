@@ -26,6 +26,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+
     # load pre-trained box pushing model
     load_path = 'assets/pretrained_models/box_multi_step_residual_dynamics_model.pt'
     state_dict = torch.load(load_path)
@@ -35,7 +37,9 @@ if __name__ == "__main__":
 
     env = PandaBoxPushingEnv(debug=args.render, include_obstacle=True, render_non_push_motions=False, camera_heigh=800, camera_width=800, render_every_n_steps=5)
     controller = PushingController(env, box_multi_step_residual_dynamics_model,
-                                obstacle_avoidance_pushing_cost_function, num_samples=1000, horizon=20)
+                                   obstacle_avoidance_pushing_cost_function, 
+                                   num_samples=1000, horizon=20,
+                                   device=device)
     env.reset()
     optimizer = None
 
@@ -52,6 +56,7 @@ if __name__ == "__main__":
             for _ in tqdm(range(args.step)):
                 parameters = optimizer.ask(number=popsize)
                 fit = []
+                action = None
                 for hyperparameter in parameters:
                     controller.set_parameters(hyperparameter)
                     action = controller.control(state)
@@ -73,17 +78,17 @@ if __name__ == "__main__":
         optimizer.result_pretty()
 
     elif args.optimizer == "bayes":
-        optimizer = BayesianOptimization(torch.tensor([0, 0, 0, 0]), torch.tensor([1, 1, 1, 1]))
+        optimizer = BayesianOptimization(torch.tensor([0, 0, 0, 0]), torch.tensor([1, 1, 1, 1]), device=device)
 
         for _ in range(args.epoch):
             start_state = env.reset()
             state = start_state
             for _ in tqdm(range(args.step)):
-                parameters = optimizer.opt_acq_once()
+                parameters = optimizer.suggest()
                 controller.set_parameters(parameters)
                 action = controller.control(state)
                 cost_min = controller.get_cost_total().min()
-                optimizer.update_objective(torch.tensor(cost_min))
+                optimizer.register(torch.tensor(cost_min))
                 state, reward, done, _ = env.step(action)
                 if done:
                     break
@@ -101,4 +106,5 @@ if __name__ == "__main__":
         xval, fval = optimizer.get_result()
         print(f"Found minimum objective {fval:.4f} at {xval}")
 
-    env.disconnect()
+    if args.render:
+        env.disconnect()
