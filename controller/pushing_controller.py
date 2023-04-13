@@ -41,7 +41,7 @@ class PushingController(object):
         self.dtype = dtype
         self.device = device
         self.cost_function = cost_function
-
+        self.parameters = torch.cat([torch.as_tensor(lambda_value).unsqueeze(0), noise_sigma.diagonal()])
 
     def _compute_dynamics(self, state, action):
         """
@@ -78,7 +78,8 @@ class PushingController(object):
         return action
 
     def set_parameters(self, hyperparameters):
-        # ---
+        # ! Run set_target_state first
+        assert self.target_state is not None
         self.mppi.set_parameters(hyperparameters)
         if len(hyperparameters) > 4:
             self.mppi.running_cost = partial(self.cost_function, 
@@ -86,13 +87,20 @@ class PushingController(object):
                                              Q_diag=hyperparameters[4:7])
         else:
             self.mppi.running_cost = partial(self.cost_function, target_pose=self.target_state)
+        
+        self.parameters = hyperparameters
 
+    def get_parameters(self):
+        return self.parameters
 
     def set_target_state(self, target_state):
         if torch.is_tensor(target_state):
             self.target_state = target_state.to(dtype=self.dtype, device=self.device)
         else:
             self.target_state = torch.from_numpy(target_state).to(dtype=self.dtype, device=self.device)
+    
+    def get_target_state(self):
+        return self.target_state
 
     def get_cost_total(self):
         return self.mppi.get_cost_total()

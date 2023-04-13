@@ -413,6 +413,10 @@ class PandaBoxPushingEnv(PandaPushingEnv):
         state = self.get_object_pos_planar().astype(np.float32)
         return state
 
+    def set_target_state(self, target_state):
+        assert isinstance(target_state, np.ndarray)
+        self.target_state = target_state
+
     def _debug_step(self):
         """
         Add debug code here.
