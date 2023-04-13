@@ -1,4 +1,5 @@
 import torch
+from torch import Tensor
 import numpy as np
 import random
 import gpytorch
@@ -39,7 +40,8 @@ class AcquisitionFunction:
 
 
 class BayesianOptimization:
-    def __init__(self, lower_bounds:torch.Tensor, upper_bounds:torch.Tensor, acq_mode="ei", seed=42, n_warmup=5, n_grid_pt=10000, dtype=torch.float32, device="cpu"):
+    def __init__(self, lower_bounds:Tensor, upper_bounds:Tensor, acq_mode:str="ei", 
+                 seed:int=42, n_warmup:int=5, n_grid_pt:int=10000, dtype=torch.float32, device="cpu"):
         self.model = None
         self.likelihood = None
         self.acq = AcquisitionFunction(mode=acq_mode)
@@ -85,7 +87,7 @@ class BayesianOptimization:
         xval, fval = self.get_result()
         return xval, fval
 
-    def suggest(self) -> torch.Tensor:
+    def suggest(self) -> Tensor:
         if self._X.shape[0] <= self.n_warmup:
             next_sample = self._sample_warmup()
         else:
@@ -103,7 +105,7 @@ class BayesianOptimization:
         self._X_last = next_sample
         return next_sample.clamp(self.X_bounds[:, 0], self.X_bounds[:, 1])
 
-    def register(self, y_new):
+    def register(self, y_new:Tensor):
         self._X = torch.cat([self._X, self._X_last[None, :]], dim=0)
         self._y = torch.cat([self._y, torch.atleast_1d(y_new).to(dtype=self.dtype, device=self.device)], dim=0)
         if y_new < self._minimum:
@@ -116,7 +118,7 @@ class BayesianOptimization:
         sample = self.X_distrib.sample() # (N, )
         return sample
 
-    def _fit_model(self, X, y):
+    def _fit_model(self, X:Tensor, y:Tensor):
         if self.model is None:
             self.model = Matern_GP(X, y).to(dtype=self.dtype, device=self.device)
             self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
@@ -126,7 +128,7 @@ class BayesianOptimization:
         # Train the GP
         train_gp_hyperparams(self.model, self.likelihood, self._X, self._y, lr=self._model_lr, iters=self._model_epoch)
 
-    def _surrogate(self, X)->torch.Tensor:
+    def _surrogate(self, X:Tensor)->Tensor:
         self.model.eval()
         self.likelihood.eval()
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
