@@ -1,7 +1,7 @@
 # GPs for Bayesian Optimization
 Bayesian optimization is a sequential design strategy for global optimization of black-box functions that does not assume any functional forms. In this project you will use Gaussian Process (GP) models to perform Bayesian Optimization of the parameters of Model Predictive Path Integral (MPPI) controller for a pushing task. 
 
-<ins>Due data</ins>: **April 21** for code and demo | **April 24** for presentation
+<ins>Due data</ins>: **April 21** for code and demo
 
 ## TODOs
 
@@ -32,6 +32,7 @@ Bayesian optimization is a sequential design strategy for global optimization of
 - Python >= 3.8
 - PyTorch >= 1.11
 - GPytorch >= 1.9.1
+- cma >= 3.3.0
 
 ## Reference
 **BOA Algorithm**
@@ -52,6 +53,7 @@ Bayesian optimization is a sequential design strategy for global optimization of
 - [Python implementation of bayesian global optimization](https://github.com/fmfn/BayesianOptimization) 6.6k
 - [BoTorch](https://github.com/pytorch/botorch) 2.6k
 - [GPyTorch](https://github.com/cornellius-gp/gpytorch) 3k
+- [pycma](https://github.com/CMA-ES/pycma)
 
 **Others**
 - [Bayesian optimization wiki](https://en.wikipedia.org/wiki/Bayesian_optimization)

@@ -200,7 +200,7 @@ class MPPI():
         self.actions = None
 
     def set_parameters(self, parameters):
-        self.lambda_ = parameters[0] / 10 if parameters[0] > 1 else parameters
+        self.lambda_ = parameters[0] / 10 if parameters[0] > 1 else parameters[0]
         if torch.is_tensor(parameters):
             noise_sigma_diag = parameters[1:4].clone().detach().to(dtype=self.dtype, device=self.d)
         else:
@@ -318,15 +318,12 @@ class MPPI():
             # the actions with low noise if all states have the same cost. With abs(noise) we prefer actions close to the
             # nomial trajectory.
         else:
-
             action_cost = self.lambda_ * self.noise @ self.noise_sigma_inv  # Like original paper
 
         self.cost_total, self.states, self.actions = self._compute_rollout_costs(self.perturbed_action)
         self.actions /= self.u_scale
 
         # action perturbation cost
-        # print(self.cost_total)
-        # perturbation_cost = torch.sum(self.U * action_cost, dim=(1, 2))
         perturbation_cost = torch.sum(self.U * action_cost, dim=(1, 2))
         self.cost_total += perturbation_cost
         return self.cost_total

@@ -13,9 +13,9 @@ import cma
 import argparse
 import matplotlib.pyplot as plt
 from model.state_dynamics_models import ResidualDynamicsModel
-from controller.pushing_controller import PushingController, obstacle_avoidance_pushing_cost_function
+from controller.pushing_controller import PushingController, obstacle_avoidance_pushing_cost_function, free_pushing_cost_function
 from optimizer.bayesian_optimization import BayesianOptimization
-from env.panda_pushing_env import PandaBoxPushingEnv, BOX_SIZE, TARGET_POSE_OBSTACLES_BOX
+from env.panda_pushing_env import PandaBoxPushingEnv, TARGET_POSE_OBSTACLES_BOX, BOX_SIZE, TARGET_POSE_FREE_BOX
 
 def get_total_cost(end_state, target_state, n_steps, k = 0.2, n_collision = 0):
 
@@ -36,12 +36,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--step", type=int, default=20)
     parser.add_argument("--epoch", type=int, default=100)
-    parser.add_argument("--optimizer", type=str, default="cma", choices=["bayes", "cma"])
+    parser.add_argument("--optimizer", type=str, default="bayes", choices=["bayes", "cma"])
     parser.add_argument("--render", action="store_true")
+    parser.add_argument("--cuda", action="store_false")
 
     args = parser.parse_args()
 
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = "cuda:0" if torch.cuda.is_available() and args.cuda else "cpu"
 
     # load pre-trained box pushing model
     load_path = 'assets/pretrained_models/box_multi_step_residual_dynamics_model.pt'
@@ -57,6 +58,9 @@ if __name__ == "__main__":
                                    device=device)
     env.reset()
     optimizer = None
+    counter = 0
+    # target_state = TARGET_POSE_OBSTACLES_BOX
+    target_state = TARGET_POSE_OBSTACLES_BOX
 
     if args.optimizer == "cma":
         # cma test example
@@ -128,8 +132,9 @@ if __name__ == "__main__":
 
             parameters = optimizer.suggest()
             print(parameters)
-            # controller.set_parameters([0.01611861,2.6057098,9.580754,5.317082])
-            controller.set_parameters(parameters)
+            controller.set_parameters([2.5275327272262276, 2.5476387164342835, 0.3065728561574313, 2.7788383937981758])
+            
+            # controller.set_parameters(parameters)
 
             for i in tqdm(range(args.step)):
                 # parameters = optimizer.suggest()
@@ -139,10 +144,9 @@ if __name__ == "__main__":
                 if done:
                     break
             
-            controller.mppi.reset()
+            controller.reset()
             # Evaluate if goal is reached
             end_state = env.get_state()
-            target_state = TARGET_POSE_OBSTACLES_BOX
             goal_distance = np.linalg.norm(end_state[:2]-target_state[:2]) # evaluate only position, not orientation
             goal_reached = goal_distance < BOX_SIZE
             if goal_reached:

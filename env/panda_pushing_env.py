@@ -16,6 +16,7 @@ assets_dir = "assets"
 # Box Pushing Env
 BOX_SIZE = 0.1
 
+OBSTACLE_POSE = np.array([0.6, 0.2, 0])
 TARGET_POSE_FREE_BOX = np.array([0.8, 0., 0.])
 TARGET_POSE_OBSTACLES_BOX = np.array([0.8, -0.1, 0.])
 OBSTACLE_CENTRE_BOX = np.array([0.6, 0.2, 0.])
@@ -36,6 +37,7 @@ class PandaPushingEnv(gym.Env):
         self.visualizer = visualizer
         self.include_obstacle = include_obstacle
         self.render_every_n_steps = render_every_n_steps
+        self.target_state = None
 
         if debug:
             p.connect(p.GUI)
@@ -296,63 +298,15 @@ class PandaBoxPushingEnv(PandaPushingEnv):
 
     def __init__(self, debug=False, visualizer=None, include_obstacle=False, render_non_push_motions=True,
                  render_every_n_steps=1, camera_heigh=84, camera_width=84):
-        # super().__init__(debug, visualizer, include_obstacle, render_non_push_motions,
-        #          render_every_n_steps, camera_heigh, camera_width)
-        self.debug = debug
-        self.visualizer = visualizer
-        self.include_obstacle = include_obstacle
-        self.render_every_n_steps = render_every_n_steps
-        if debug:
-            p.connect(p.GUI)
-        else:
-            p.connect(p.DIRECT, options="--opengl2")
-        p.setAdditionalSearchPath(pd.getDataPath())
-        self.episode_step_counter = 0
-        self.episode_counter = 0
-        self.frames = []
+        super().__init__(debug, visualizer, include_obstacle, render_non_push_motions,
+                 render_every_n_steps, camera_heigh, camera_width)
+        
+        self.target_state = TARGET_POSE_FREE_BOX
 
-        self.pandaUid = None  # panda robot arm
-        self.tableUid = None  # Table where to push
-        self.objectUid = None  # Pushing object
-        self.targetUid = None  # Target object
-        self.obstacleUid = None  # Obstacle object
-
+        self.obstacle_pose = OBSTACLE_POSE
         self.object_file_path = os.path.join(assets_dir, "objects/cube/cube.urdf")
         self.target_file_path = os.path.join(assets_dir, "objects/cube/cube.urdf")
         self.obstacle_file_path = os.path.join(assets_dir, "objects/obstacle/obstacle.urdf")
-
-        # self.init_panda_joint_state = [-0.028, 0.853, -0.016, -1.547, 0.017, 2.4, 2.305, 0., 0.]
-        self.init_panda_joint_state = np.array([0., 0., 0., -np.pi * 0.5, 0., np.pi * 0.5, 0.])
-
-        self.object_start_pose = None
-        self.object_target_pose = None
-
-        self.left_finger_idx = 9
-        self.right_finger_idx = 10
-        self.end_effector_idx = 11
-
-        self.ik_precision_treshold = 1e-4
-        self.max_ik_repeat = 50
-
-        # Robot always face that direction
-        # self.fixed_orientation = p.getQuaternionFromEuler([0., -math.pi, math.pi / 2.]) # facing towards y
-        self.fixed_orientation = p.getQuaternionFromEuler([0., -math.pi, 0.])  # facing towards x
-
-        self.delta_step_joint = 0.016
-
-        self.close_gripper = False
-
-        self.render_non_push_motions = render_non_push_motions
-        self.is_render_on = True
-
-        # Render camera setting
-        # self.camera_height = 84
-        # self.camera_width = 84
-        self.camera_height = camera_heigh
-        self.camera_width = camera_width
-
-        p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=0, cameraPitch=-40,
-                                     cameraTargetPosition=[0.55, -0.35, 0.2])
 
         self.block_size = BOX_SIZE
 
@@ -395,7 +349,7 @@ class PandaBoxPushingEnv(PandaPushingEnv):
         self.targetUid = p.loadURDF(self.target_file_path, basePosition=self.object_target_pose[:3], baseOrientation=self.object_target_pose[3:], globalScaling=1., useFixedBase=True)
 
         if self.include_obstacle:
-            self.obstacleUid = p.loadURDF(self.obstacle_file_path, basePosition=[.6, 0.2, 0], useFixedBase=True)
+            self.obstacleUid = p.loadURDF(self.obstacle_file_path, basePosition=self.obstacle_pose, useFixedBase=True)
 
         p.setCollisionFilterGroupMask(self.targetUid, -1, 0, 0)  # remove collisions with targeUid
         p.setCollisionFilterPair(self.pandaUid, self.targetUid, -1, -1, 0)  # remove collision between robot and target
@@ -429,10 +383,11 @@ class PandaBoxPushingEnv(PandaPushingEnv):
     def _is_done(self, state):
         done = not self.observation_space.contains(state)
         at_goal = False
-        if self.include_obstacle:
-            at_goal = np.sum((state - TARGET_POSE_OBSTACLES_BOX)**2) < 0.01
-        else:
-            at_goal = np.sum((state - TARGET_POSE_FREE_BOX)**2) < 0.01
+        # if self.include_obstacle:
+        #     at_goal = np.sum((state - TARGET_POSE_OBSTACLES_BOX)**2) < 0.01
+        # else:
+        #     at_goal = np.sum((state - TARGET_POSE_FREE_BOX)**2) < 0.01
+        at_goal = np.linalg.norm(state[:2] - self.target_state[:2]) < BOX_SIZE
         done = done or at_goal
         return done
 
@@ -469,14 +424,16 @@ class PandaBoxPushingEnv(PandaPushingEnv):
     def _set_object_positions(self):
         # set object initial position and final position
         # self.object_start_pos = self.cube_pos_distribution.sample()
-        if self.include_obstacle:
-            # with obstacles
-            object_start_pose_planar = np.array([0.4, 0., -np.pi * 0.2])
-            object_target_pose_planar = TARGET_POSE_OBSTACLES_BOX
-        else:
-            # free of obstacles
-            object_start_pose_planar = np.array([0.4, 0., np.pi * 0.2])
-            object_target_pose_planar = TARGET_POSE_FREE_BOX
+        object_start_pose_planar = np.array([0.4, 0., -np.pi * 0.2])
+        # if self.include_obstacle:
+        #     # with obstacles
+        #     object_start_pose_planar = np.array([0.4, 0., -np.pi * 0.2])
+        #     object_target_pose_planar = TARGET_POSE_OBSTACLES_BOX
+        # else:
+        #     # free of obstacles
+        #     object_start_pose_planar = np.array([0.4, 0., np.pi * 0.2])
+        #     object_target_pose_planar = TARGET_POSE_FREE_BOX
+        object_target_pose_planar = self.target_state
         self.object_start_pose = self._planar_pose_to_world_pose(
             object_start_pose_planar)  # self.cube_pos_distribution.sample()
         self.object_target_pose = self._planar_pose_to_world_pose(object_target_pose_planar)
@@ -490,63 +447,15 @@ class PandaDiskPushingEnv(PandaPushingEnv):
 
     def __init__(self, debug=False, visualizer=None, include_obstacle=False, render_non_push_motions=True,
                  render_every_n_steps=1, camera_heigh=84, camera_width=84, done_at_goal=True):
-        self.debug = debug
-        self.visualizer = visualizer
-        self.include_obstacle = include_obstacle
-        self.render_every_n_steps = render_every_n_steps
+        super().__init__(debug, visualizer, include_obstacle, render_non_push_motions,
+                 render_every_n_steps, camera_heigh, camera_width)
+
+        self.target_state = TARGET_POSE_FREE_DISK
         self.done_at_goal = done_at_goal
-        if debug:
-            p.connect(p.GUI)
-        else:
-            p.connect(p.DIRECT, options="--opengl2")
-        p.setAdditionalSearchPath(pd.getDataPath())
-
-        self.episode_step_counter = 0
-        self.episode_counter = 0
-        self.frames = []
-
-        self.pandaUid = None  # panda robot arm
-        self.tableUid = None  # Table where to push
-        self.objectUid = None  # Pushing object
-        self.targetUid = None  # Target object
-        self.obstacleUid = None  # Obstacle object
 
         self.object_file_path = os.path.join(assets_dir, "objects/disk/disk.urdf")
         self.target_file_path = os.path.join(assets_dir, "objects/disk/disk.urdf")
         self.obstacle_file_path = os.path.join(assets_dir, "objects/disk/disk.urdf")
-
-        # self.init_panda_joint_state = [-0.028, 0.853, -0.016, -1.547, 0.017, 2.4, 2.305, 0., 0.]
-        self.init_panda_joint_state = np.array([0., 0., 0., -np.pi * 0.5, 0., np.pi * 0.5, 0.])
-
-        self.object_start_pose = None
-        self.object_target_pose = None
-
-        self.left_finger_idx = 9
-        self.right_finger_idx = 10
-        self.end_effector_idx = 11
-
-        self.ik_precision_treshold = 1e-4
-        self.max_ik_repeat = 50
-
-        # Robot always face that direction
-        # self.fixed_orientation = p.getQuaternionFromEuler([0., -math.pi, math.pi / 2.]) # facing towards y
-        self.fixed_orientation = p.getQuaternionFromEuler([0., -math.pi, 0.])  # facing towards x
-
-        self.delta_step_joint = 0.016
-
-        self.close_gripper = False
-
-        self.render_non_push_motions = render_non_push_motions
-        self.is_render_on = True
-
-        # Render camera setting
-        # self.camera_height = 84
-        # self.camera_width = 84
-        self.camera_height = camera_heigh
-        self.camera_width = camera_width
-
-        p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=0, cameraPitch=-40,
-                                     cameraTargetPosition=[0.55, -0.35, 0.2])
 
         self.disk_radius = DISK_RADIUS
 
@@ -635,10 +544,11 @@ class PandaDiskPushingEnv(PandaPushingEnv):
         done = not self.observation_space.contains(state)
         at_goal = False
         if self.done_at_goal:
-            if self.include_obstacle:
-                at_goal = np.linalg.norm(state[:2] - TARGET_POSE_OBSTACLES_DISK[:2]) < 1.2 * DISK_RADIUS
-            else:
-                at_goal = np.linalg.norm(state[:2] - TARGET_POSE_FREE_DISK[:2]) < 1.2 * DISK_RADIUS
+            # if self.include_obstacle:
+            #     at_goal = np.linalg.norm(state[:2] - TARGET_POSE_OBSTACLES_DISK[:2]) < 1.2 * DISK_RADIUS
+            # else:
+            #     at_goal = np.linalg.norm(state[:2] - TARGET_POSE_FREE_DISK[:2]) < 1.2 * DISK_RADIUS
+            at_goal = np.linalg.norm(state[:2] - self.target_state[:2]) < 1.2 * DISK_RADIUS
         done = done or at_goal
         return done
 
@@ -683,14 +593,15 @@ class PandaDiskPushingEnv(PandaPushingEnv):
                 object_start_pose_planar = rand_object_start_pose_planar
             else:
                 object_start_pose_planar = np.array([0.4, 0., -np.pi * 0.2])
-            object_target_pose_planar = TARGET_POSE_OBSTACLES_DISK
+            # object_target_pose_planar = TARGET_POSE_OBSTACLES_DISK
         else:
             # free of obstacles
             if random_start:
                 object_start_pose_planar = rand_object_start_pose_planar
             else:
                 object_start_pose_planar = np.array([0.4, 0., np.pi * 0.2])
-            object_target_pose_planar = TARGET_POSE_FREE_DISK
+            # object_target_pose_planar = TARGET_POSE_FREE_DISK
+        object_target_pose_planar = self.target_state
 
         self.object_start_pose = self._planar_pose_to_world_pose(object_start_pose_planar)
         self.object_target_pose = self._planar_pose_to_world_pose(object_target_pose_planar)
