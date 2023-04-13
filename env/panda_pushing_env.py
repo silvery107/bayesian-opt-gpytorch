@@ -16,6 +16,7 @@ assets_dir = "assets"
 # Box Pushing Env
 BOX_SIZE = 0.1
 
+OBSTACLE_POSE = np.array([0.6, 0.2, 0])
 TARGET_POSE_FREE_BOX = np.array([0.8, 0., 0.])
 TARGET_POSE_OBSTACLES_BOX = np.array([0.8, -0.1, 0.])
 OBSTACLE_CENTRE_BOX = np.array([0.6, 0.2, 0.])
@@ -300,6 +301,7 @@ class PandaBoxPushingEnv(PandaPushingEnv):
         self.visualizer = visualizer
         self.include_obstacle = include_obstacle
         self.render_every_n_steps = render_every_n_steps
+        self.obstacle_pose = OBSTACLE_POSE
         if debug:
             p.connect(p.GUI)
         else:
@@ -394,7 +396,7 @@ class PandaBoxPushingEnv(PandaPushingEnv):
         self.targetUid = p.loadURDF(self.target_file_path, basePosition=self.object_target_pose[:3], baseOrientation=self.object_target_pose[3:], globalScaling=1., useFixedBase=True)
 
         if self.include_obstacle:
-            self.obstacleUid = p.loadURDF(self.obstacle_file_path, basePosition=[.6, 0.2, 0], useFixedBase=True)
+            self.obstacleUid = p.loadURDF(self.obstacle_file_path, basePosition=self.obstacle_pose, useFixedBase=True)
 
         p.setCollisionFilterGroupMask(self.targetUid, -1, 0, 0)  # remove collisions with targeUid
         p.setCollisionFilterPair(self.pandaUid, self.targetUid, -1, -1, 0)  # remove collision between robot and target
