@@ -200,7 +200,7 @@ class MPPI():
         self.actions = None
 
     def set_parameters(self, parameters):
-        self.lambda_ = parameters[0]
+        self.lambda_ = parameters[0] / 10 if parameters[0] > 1 else parameters
         if torch.is_tensor(parameters):
             noise_sigma_diag = parameters[1:4].clone().detach().to(dtype=self.dtype, device=self.d)
         else:
