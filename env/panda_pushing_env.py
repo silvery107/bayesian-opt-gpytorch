@@ -297,6 +297,8 @@ class PandaBoxPushingEnv(PandaPushingEnv):
 
     def __init__(self, debug=False, visualizer=None, include_obstacle=False, render_non_push_motions=True,
                  render_every_n_steps=1, camera_heigh=84, camera_width=84):
+        # super().__init__(debug, visualizer, include_obstacle, render_non_push_motions,
+        #          render_every_n_steps, camera_heigh, camera_width)
         self.debug = debug
         self.visualizer = visualizer
         self.include_obstacle = include_obstacle
@@ -307,7 +309,6 @@ class PandaBoxPushingEnv(PandaPushingEnv):
         else:
             p.connect(p.DIRECT, options="--opengl2")
         p.setAdditionalSearchPath(pd.getDataPath())
-
         self.episode_step_counter = 0
         self.episode_counter = 0
         self.frames = []

@@ -37,7 +37,7 @@ class PushingController(object):
                          u_min=u_min,
                          u_max=u_max,
                          device=device,
-                         noise_abs_cost=False)
+                         noise_abs_cost=True)
         
         self.device = device
 

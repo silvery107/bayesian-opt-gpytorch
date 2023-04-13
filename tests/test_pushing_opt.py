@@ -17,6 +17,20 @@ from controller.pushing_controller import PushingController, obstacle_avoidance_
 from optimizer.bayesian_optimization import BayesianOptimization
 from env.panda_pushing_env import PandaBoxPushingEnv, TARGET_POSE_OBSTACLES_BOX, BOX_SIZE, TARGET_POSE_FREE_BOX
 
+def get_total_cost(end_state, target_state, n_steps, k = 0.1, n_collision = 0):
+
+    goal_distance = np.linalg.norm(end_state[:2]-target_state[:2]) # evaluate only position, not orientation
+    goal_reached = goal_distance > BOX_SIZE
+    cost = goal_distance + k * n_steps + goal_reached * 10
+    return cost
+
+
+def target_state_reset():
+    
+    return np.random.uniform(low=[0.05, -0.35, 0.0], high=[.8, 0.35, 0.0], size=None)
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--step", type=int, default=20)
@@ -57,7 +71,8 @@ if __name__ == "__main__":
         for _ in range(args.epoch):
             start_state = env.reset()
             state = start_state
-            for _ in tqdm(range(args.step)):
+
+            for i in tqdm(range(args.step)):
                 parameters = optimizer.ask(number=popsize)
                 fit = []
                 action = None
@@ -75,7 +90,6 @@ if __name__ == "__main__":
             end_state = env.get_state()
             goal_distance = np.linalg.norm(end_state[:2]-target_state[:2]) # evaluate only position, not orientation
             goal_reached = goal_distance < BOX_SIZE
-
             print(f'GOAL REACHED: {goal_reached}')
             
         optimizer.result_pretty()
@@ -86,12 +100,14 @@ if __name__ == "__main__":
         for _ in range(args.epoch):
             start_state = env.reset()
             state = start_state
-            for _ in tqdm(range(args.step)):
-                parameters = optimizer.suggest()
-                controller.set_parameters(parameters)
+
+            parameters = optimizer.suggest()
+            controller.set_parameters(parameters)
+
+            for i in tqdm(range(args.step)):
+                # parameters = optimizer.suggest()
                 action = controller.control(state)
-                cost_min = controller.get_cost_total().min()
-                optimizer.register(torch.tensor(cost_min))
+                # cost_min = controller.get_cost_total().min()
                 state, reward, done, _ = env.step(action)
                 if done:
                     break
@@ -102,6 +118,9 @@ if __name__ == "__main__":
             goal_distance = np.linalg.norm(end_state[:2]-target_state[:2]) # evaluate only position, not orientation
             goal_reached = goal_distance < BOX_SIZE
 
+            cost = get_total_cost(end_state, target_state, i)
+            optimizer.register(torch.tensor(cost))
+            print(f'COST : {cost}')
             print(f'GOAL REACHED: {goal_reached}')
         
         xval, fval = optimizer.get_result()
