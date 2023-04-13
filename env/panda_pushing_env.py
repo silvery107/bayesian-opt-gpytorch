@@ -36,7 +36,6 @@ class PandaPushingEnv(gym.Env):
         self.visualizer = visualizer
         self.include_obstacle = include_obstacle
         self.render_every_n_steps = render_every_n_steps
-        self.target_state = np.array([0.8, -0.1, 0.])
 
         if debug:
             p.connect(p.GUI)
@@ -297,6 +296,8 @@ class PandaBoxPushingEnv(PandaPushingEnv):
 
     def __init__(self, debug=False, visualizer=None, include_obstacle=False, render_non_push_motions=True,
                  render_every_n_steps=1, camera_heigh=84, camera_width=84):
+        # super().__init__(debug, visualizer, include_obstacle, render_non_push_motions,
+        #          render_every_n_steps, camera_heigh, camera_width)
         self.debug = debug
         self.visualizer = visualizer
         self.include_obstacle = include_obstacle
@@ -429,7 +430,7 @@ class PandaBoxPushingEnv(PandaPushingEnv):
         done = not self.observation_space.contains(state)
         at_goal = False
         if self.include_obstacle:
-            at_goal = np.sum((state - self.target_state)**2) < 0.01
+            at_goal = np.sum((state - TARGET_POSE_OBSTACLES_BOX)**2) < 0.01
         else:
             at_goal = np.sum((state - TARGET_POSE_FREE_BOX)**2) < 0.01
         done = done or at_goal
@@ -471,7 +472,7 @@ class PandaBoxPushingEnv(PandaPushingEnv):
         if self.include_obstacle:
             # with obstacles
             object_start_pose_planar = np.array([0.4, 0., -np.pi * 0.2])
-            object_target_pose_planar = self.target_state
+            object_target_pose_planar = TARGET_POSE_OBSTACLES_BOX
         else:
             # free of obstacles
             object_start_pose_planar = np.array([0.4, 0., np.pi * 0.2])

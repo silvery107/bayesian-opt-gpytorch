@@ -15,7 +15,7 @@ import argparse
 from model.state_dynamics_models import ResidualDynamicsModel
 from controller.pushing_controller import PushingController, obstacle_avoidance_pushing_cost_function
 from optimizer.bayesian_optimization import BayesianOptimization
-from env.panda_pushing_env import PandaBoxPushingEnv, BOX_SIZE
+from env.panda_pushing_env import PandaBoxPushingEnv, BOX_SIZE, TARGET_POSE_OBSTACLES_BOX
 
 def get_total_cost(end_state, target_state, n_steps, k = 0.1, n_collision = 0):
 
@@ -27,7 +27,7 @@ def get_total_cost(end_state, target_state, n_steps, k = 0.1, n_collision = 0):
 
 def target_state_reset():
     
-    return np.random.uniform(low=[0.05, -0.35], high=[.8, 0.35], size=None)
+    return np.random.uniform(low=[0.05, -0.35, 0.0], high=[.8, 0.35, 0.0], size=None)
 
 
 
@@ -96,8 +96,6 @@ if __name__ == "__main__":
 
         for _ in range(args.epoch):
             start_state = env.reset()
-            env.target_state = target_state_reset()
-            print(env.target_state)
             state = start_state
 
             parameters = optimizer.suggest()
@@ -114,7 +112,7 @@ if __name__ == "__main__":
             controller.mppi.reset()
             # Evaluate if goal is reached
             end_state = env.get_state()
-            target_state = env.target_state
+            target_state = TARGET_POSE_OBSTACLES_BOX
             goal_distance = np.linalg.norm(end_state[:2]-target_state[:2]) # evaluate only position, not orientation
             goal_reached = goal_distance < BOX_SIZE
 
