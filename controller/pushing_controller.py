@@ -78,7 +78,7 @@ class PushingController(object):
 
     def set_parameters(self, hyperparameters):
         # ---
-        self.mppi.running_cost = partial(obstacle_avoidance_pushing_cost_function, target_pose=self.target_state)
+        # self.mppi.running_cost = partial(obstacle_avoidance_pushing_cost_function, target_pose=self.target_state)
         self.mppi.set_parameters(hyperparameters)
 
     def get_cost_total(self):
@@ -99,7 +99,7 @@ def free_pushing_cost_function(state, action):
     cost = None
     # --- Your code here
     state_diff = state - target_pose
-    Q = torch.diag(torch.tensor([1, 1, 0.1], dtype=state.dtype, device=state.device))
+    Q = torch.diag(torch.tensor([100, 100, 0.1], dtype=state.dtype, device=state.device))
     cost = (state_diff @ Q @ state_diff.T).diagonal()
     # ---
     return cost
@@ -145,18 +145,18 @@ def collision_detection(state):
     return in_collision.float()
 
 
-def obstacle_avoidance_pushing_cost_function(state, action, target_pose):
+def obstacle_avoidance_pushing_cost_function(state, action):
     """
     Compute the state cost for MPPI on a setup with obstacles.
     :param state: torch tensor of shape (B, state_size)
     :param action: torch tensor of shape (B, state_size)
     :return: cost: torch tensor of shape (B,) containing the costs for each of the provided states
     """
-    target_pose = target_pose.to(dtype=state.dtype, device=state.device)  # torch tensor of shape (3,) containing (pose_x, pose_y, pose_theta)
+    target_pose = TARGET_POSE_OBSTACLES_TENSOR.to(dtype=state.dtype, device=state.device)  # torch tensor of shape (3,) containing (pose_x, pose_y, pose_theta)
     cost = None
     # --- Your code here
     x = state
-    Q = torch.diag(torch.tensor([1, 1, 0.1], dtype=state.dtype, device=state.device))
+    Q = torch.diag(torch.tensor([100, 100, 0.1], dtype=state.dtype, device=state.device))
     state_diff = state - target_pose
     cost = (state_diff @ Q @ state_diff.T).diagonal() + 100. * collision_detection(x)
     # ---

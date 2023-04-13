@@ -13,9 +13,9 @@ import cma
 import argparse
 
 from model.state_dynamics_models import ResidualDynamicsModel
-from controller.pushing_controller import PushingController, obstacle_avoidance_pushing_cost_function
+from controller.pushing_controller import PushingController, obstacle_avoidance_pushing_cost_function, free_pushing_cost_function
 from optimizer.bayesian_optimization import BayesianOptimization
-from env.panda_pushing_env import PandaBoxPushingEnv, TARGET_POSE_OBSTACLES_BOX, BOX_SIZE
+from env.panda_pushing_env import PandaBoxPushingEnv, TARGET_POSE_OBSTACLES_BOX, BOX_SIZE, TARGET_POSE_FREE_BOX
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -23,10 +23,11 @@ if __name__ == "__main__":
     parser.add_argument("--epoch", type=int, default=5)
     parser.add_argument("--optimizer", type=str, default="bayes", choices=["bayes", "cma"])
     parser.add_argument("--render", action="store_true")
+    parser.add_argument("--cuda", action="store_true")
 
     args = parser.parse_args()
 
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = "cuda:0" if torch.cuda.is_available() and args.cuda else "cpu"
 
     # load pre-trained box pushing model
     load_path = 'assets/pretrained_models/box_multi_step_residual_dynamics_model.pt'
@@ -42,6 +43,9 @@ if __name__ == "__main__":
                                    device=device)
     env.reset()
     optimizer = None
+    counter = 0
+    # target_state = TARGET_POSE_OBSTACLES_BOX
+    target_state = TARGET_POSE_OBSTACLES_BOX
 
     if args.optimizer == "cma":
         # cma test example
@@ -69,7 +73,6 @@ if __name__ == "__main__":
             controller.mppi.reset()
             # Evaluate if goal is reached
             end_state = env.get_state()
-            target_state = TARGET_POSE_OBSTACLES_BOX
             goal_distance = np.linalg.norm(end_state[:2]-target_state[:2]) # evaluate only position, not orientation
             goal_reached = goal_distance < BOX_SIZE
 
@@ -78,7 +81,7 @@ if __name__ == "__main__":
         optimizer.result_pretty()
 
     elif args.optimizer == "bayes":
-        optimizer = BayesianOptimization(torch.tensor([0, 0, 0, 0]), torch.tensor([1, 1, 1, 1]), device=device)
+        optimizer = BayesianOptimization(torch.tensor([0, 0, 0, 0]), torch.tensor([1, 10, 10, 10]), acq_mode="ei",device=device)
 
         for _ in range(args.epoch):
             start_state = env.reset()
@@ -93,11 +96,9 @@ if __name__ == "__main__":
                 if done:
                     break
             
-            controller.mppi.reset()
+            controller.reset()
             # Evaluate if goal is reached
             end_state = env.get_state()
-            # env.disconnect()
-            target_state = TARGET_POSE_OBSTACLES_BOX
             goal_distance = np.linalg.norm(end_state[:2]-target_state[:2]) # evaluate only position, not orientation
             goal_reached = goal_distance < BOX_SIZE
 
