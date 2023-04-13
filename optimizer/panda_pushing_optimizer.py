@@ -81,3 +81,15 @@ class PandaPushingOptimizer:
         elif self.opt_type == "bayref":
             print("Target:", self._optimizer.max["target"])
             print("Params:", self._optimizer.max["params"])
+
+    def get_result(self):
+        if self.opt_type == "bayes":
+            xval, fval = self._optimizer.get_result() # ndarray
+
+        elif self.opt_type == "cma":
+            xval = self._optimizer.result[0] # list
+        
+        elif self.opt_type == "bayref":
+            xval = list(self._optimizer.max["params"].values()) # list
+
+        return xval

@@ -42,6 +42,7 @@ class PushingController(object):
         self.device = device
         self.cost_function = cost_function
         self.parameters = torch.cat([torch.as_tensor(lambda_value).unsqueeze(0), noise_sigma.diagonal()])
+        self._default_parameters = self.parameters.clone()
 
     def _compute_dynamics(self, state, action):
         """
@@ -107,6 +108,10 @@ class PushingController(object):
     
     def reset(self):
         return self.mppi.reset()
+    
+    @property
+    def default_parameters(self):
+        return self._default_parameters
 
 
 def free_pushing_cost_function(state, action, target_pose, Q_diag=[100, 100, 0.1]):
