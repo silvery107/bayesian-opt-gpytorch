@@ -28,8 +28,8 @@ def get_random_target_state(low=[0.5, -0.35, 0.0], high=[0.8, 0.35, 0.0]):
 
 def run_box_pushing_objective(env, controller, step, target_state, hyperparameters):
     # init env
-    state = env.reset()
     env.set_target_state(target_state)
+    state = env.reset()
     # init controller
     controller.reset()
     controller.set_target_state(target_state) #* set target_state before set params
