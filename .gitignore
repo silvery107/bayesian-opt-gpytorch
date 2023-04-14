@@ -132,3 +132,4 @@ dmypy.json
 *.ipynb
 *.mp4
 .vscode/
+logs/
