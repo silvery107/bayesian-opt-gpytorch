@@ -68,16 +68,20 @@ class PushingLogger:
     def update_time(self, iter_time):
         self.iter_times.append(iter_time)
 
-    def save(self, log_dir):
+    def save(self, log_dir, optimized_param):
         self.to_ndarray()
         print(f"Optimizer Average Suggest Time: {self.iter_times.mean()}")
         dataframe = np.stack([self.costs, self.steps, self.goal_dist, self.goal_status], axis=1)
         dataframe = np.concatenate((dataframe, self.params), axis=1)
+        optimized_param_array = np.array([optimized_param])
         filename = f"{int(time())}_{self.study_name}_{self.opt_type}_{self.epoch}_{self.costs.min():.4f}.csv"
         save_path = os.path.join(log_dir, filename)
         with open(save_path, "w", newline='') as f:
             writer = csv.writer(f)
             writer.writerows(dataframe)
+            writer.writerows(optimized_param_array)
+
+
 
     def load(self, log_dir, filename):
         self.reset()
@@ -90,6 +94,7 @@ class PushingLogger:
                 self.goal_dist.append(row[2])
                 self.goal_status.append(row[3])
                 self.params.append(row[4:])
+                
 
     @property
     def length(self):
@@ -173,6 +178,7 @@ class UnifiedBlackboxOptimizer:
             xval, fval = self._optimizer.get_result()
             print(f"Found minimum objective {fval:.4f} at {xval}")
 
+
         elif self.opt_type == "cma":
             self._optimizer.result_pretty()
         
@@ -197,7 +203,7 @@ class PandaBoxPushingStudy:
                  include_obstacle=False, 
                  random_target=False, target_state=None, 
                  opt_type="bayes", device="cpu", 
-                 step_scale=0.1, goal_scale=10.):
+                 step_scale=0.1, goal_scale=10., test_params = [1e-2, 2.5, 2.5, 2.5]):
         # TODO set obstacle pose?
         self._epoch = epoch
         self._n_step = 20
@@ -206,9 +212,10 @@ class PandaBoxPushingStudy:
         self._random_target = True if not include_obstacle and random_target else False
         self._target_state = target_state
         self._opt_type = opt_type
+        self.test_params = test_params
 
         param_dict = {}
-        param_dict["lower"] = [0, 0, 0, 0]
+        param_dict["lower"] = [1e-8, 1e-8, 1e-8, 1e-8]
         param_dict["upper"] = [1, 10, 10, 10]
         param_dict["acq_mode"] = "ei"
         param_dict["initial_mean"] = [0.5, 5, 5, 5]
@@ -250,29 +257,48 @@ class PandaBoxPushingStudy:
             target_state = self._target_state.copy()
         else:
             target_state = get_random_target_state()
-        opt_epoch = self._epoch // 3 if self._opt_type=="cma" else self._epoch
-        print(f"Optimizing box pushing using {self._opt_type.upper()} optimizer for {self._epoch} epoches")
-        for _ in range(opt_epoch):
-            start_time = time()
-            parameters = self._optimizer.suggest()
-            suggest_time = time() - start_time
-            self._logger.update_time(suggest_time)
-            # Run trial
-            for param in parameters:
+        
+        if self._opt_type == "test":
+            status = 'random' if self._random_target else 'fixed'
+            print(f"Testing box pushing optimizer with {status} target for {self._epoch} epochs")
+            parameters = self.test_params
+            for _ in range(self._epoch):
+                suggest_time = time()
+                self._logger.update_time(suggest_time)
+                    # Run trial
                 if self._random_target:
                     target_state = get_random_target_state()
-                end_state, pushing_step = run_pushing_task(self._env, self._controller, self._n_step, target_state, param)
+                end_state, pushing_step = run_pushing_task(self._env, self._controller, self._n_step, target_state, parameters)
                 goal_distance = np.linalg.norm(end_state[:2]-target_state[:2]) # evaluate only position, not orientation
                 goal_reached = goal_distance < self._goal_tol
                 cost = self._compute_cost(goal_distance, goal_reached, pushing_step)
+                self._logger.update(cost, pushing_step, goal_distance, goal_reached, parameters)
+            optimized_param = parameters
 
-                self._logger.update(cost, pushing_step, goal_distance, goal_reached, param)
-                self._optimizer.register(param, cost)
+        else:
+            opt_epoch = self._epoch // 3 if self._opt_type=="cma" else self._epoch
+            print(f"Optimizing box pushing using {self._opt_type.upper()} optimizer for {self._epoch} epoches")
+            for _ in range(opt_epoch):
+                start_time = time()
+                parameters = self._optimizer.suggest()
+                suggest_time = time() - start_time
+                self._logger.update_time(suggest_time)
+                # Run trial
+                for param in parameters:
+                    if self._random_target:
+                        target_state = get_random_target_state()
+                    end_state, pushing_step = run_pushing_task(self._env, self._controller, self._n_step, target_state, param)
+                    goal_distance = np.linalg.norm(end_state[:2]-target_state[:2]) # evaluate only position, not orientation
+                    goal_reached = goal_distance < self._goal_tol
+                    cost = self._compute_cost(goal_distance, goal_reached, pushing_step)
 
-        # optimized_param = self._optimizer.get_result()
-        self._optimizer.print_result()
+                    self._logger.update(cost, pushing_step, goal_distance, goal_reached, param)
+                    self._optimizer.register(param, cost)
 
-        self._logger.save(self._log_dir)
+            optimized_param = self._optimizer.get_result()
+            self._optimizer.print_result()
+
+        self._logger.save(self._log_dir, optimized_param)
         if self._render:
             self._env.disconnect()
 
