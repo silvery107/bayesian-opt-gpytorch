@@ -83,7 +83,7 @@ class PushingLogger:
         self.reset()
         load_path = os.path.join(log_dir, filename)
         with open(load_path, "r", newline='') as f:
-            reader = csv.reader(f)
+            reader = csv.reader(f, quoting=csv.QUOTE_NONNUMERIC)
             for row in reader:
                 self.costs.append(row[0])
                 self.steps.append(row[1])
@@ -208,7 +208,7 @@ class PandaBoxPushingStudy:
         self._opt_type = opt_type
 
         param_dict = {}
-        param_dict["lower"] = [0, 0, 0, 0]
+        param_dict["lower"] = [1e-8, 1e-8, 1e-8, 1e-8]
         param_dict["upper"] = [1, 10, 10, 10]
         param_dict["acq_mode"] = "ei"
         param_dict["initial_mean"] = [0.5, 5, 5, 5]
