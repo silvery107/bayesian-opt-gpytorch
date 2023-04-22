@@ -1,8 +1,9 @@
-cma==3.3.0
-gpytorch==1.9.1
-matplotlib==3.6.2
-numpy==1.24.2
-torch==1.13.1
+cma
+gpytorch
+matplotlib
+numpy
+torch
 tqdm
 pybullet
-bayesian-optimization==1.4.2
+bayesian-optimization
+gym

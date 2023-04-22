@@ -15,7 +15,7 @@ import numpy as np
 import time
 import random
 
-seed = 10000
+seed = 666
 random.seed(seed)
 np.random.seed(seed)
 torch.manual_seed(seed)

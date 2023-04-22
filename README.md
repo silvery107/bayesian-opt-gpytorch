@@ -1,31 +1,10 @@
-# GPs for Bayesian Optimization
-Bayesian optimization is a sequential design strategy for global optimization of black-box functions that does not assume any functional forms. In this project you will use Gaussian Process (GP) models to perform Bayesian Optimization of the parameters of Model Predictive Path Integral (MPPI) controller for a pushing task. 
+# Bayesian Optimization for MPPI Control of Robot Arm Planar Pushing
 
-<ins>Due data</ins>: **April 21** for code and demo
+## Quick Start
 
-## TODOs
-
-- [x]  **Setup Task Environment**
-
-    Construct a non-trivial set of obstacles in bullet pushing environment from homework 3. Use any pushing dynamics model (e.g. those learned in Homework 3 or Homework 4) in your MPPI. 
-
-- [x] **Implement Bayesian Optimization Algorithm**
-    - [x] Implement 1d Bayesian opt algo using Thompson sampling under `<models>`, run `python tests/test_tsgp.py` for testing.
-    - [x] Implement Bayes opt algo for multi-dimensional inputs
-    
-    - [x] Apply Bayesian Optimization to determine a good set of parameters for MPPI for performing a variety of pushing tasks. 
-
-        Assume that the initial state is known and that you can reset the environment after each run when optimizing the parameters. 
-        Be careful to account for the different scales and constraints on the parameters (e.g. the noise variance must be positive). 
-    
-- [x] **Prepare Two Baseline Parameter Optmization Methods**
-
-    - [x] Performance comparisons of MPPI using your optimized parameters and at least two baselines on several pushing tasks. 
-
-        One of the baselines should be to use the manually-defined parameters from the homework. 
-        Another baseline should be a different optimization method, e.g. a black-box method like [CMA-ES](https://en.wikipedia.org/wiki/CMA-ES). You may use existing libraries for the baselines.
-
-- [ ] **Writeup a Report**
+1. Install all necessary dependencies using `bash install.sh`.
+2. Run our demo using `python demo.py`. 
+   Instructions and results will be printed in the terminal and a live pushing demo should show up in pybullet GUI.
 
 ## Dependencies
 
@@ -33,6 +12,7 @@ Bayesian optimization is a sequential design strategy for global optimization of
 - PyTorch >= 1.11
 - GPytorch >= 1.9.1
 - cma >= 3.3.0
+- bayesian-optimization >= 1.4.2
 
 ## Reference
 **BOA Algorithm**
