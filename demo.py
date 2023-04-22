@@ -11,65 +11,118 @@ import os
 import argparse
 from optimizer.panda_pushing_optimizer import PandaBoxPushingStudy
 import argparse
+import numpy as np
+import time
+import random
+
+seed = 10000
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+
+
+
+class TerminalColors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    MAGENTA = '\033[95m'
+    CYAN = '\033[96m'
+
+def print_visualization_warning():
+    print(TerminalColors.BOLD + TerminalColors.RED + "=====================================" + TerminalColors.ENDC)
+    for _ in range(5):
+        print(TerminalColors.BOLD + TerminalColors.RED + "Attention please: Visualization Window May Lay at the bottom!" + TerminalColors.ENDC)
+    print(TerminalColors.BOLD + TerminalColors.RED + "=====================================" + TerminalColors.ENDC)
+
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--epoch", type=int, default=100)
-    parser.add_argument("--render", action="store_true", default=True)
-    parser.add_argument("--cuda", action="store_true")
-    parser.add_argument("--logdir", type=str, default="logs")
-    parser.add_argument("--test", action="store_true", default=True)
 
-    args = parser.parse_args()
+    print(TerminalColors.BOLD + "=====================================" + TerminalColors.ENDC)
+    print(TerminalColors.BOLD + "Here Is Demo From Yulun Zhuang & Ziqi Han. \n" + TerminalColors.ENDC)
+    print(TerminalColors.BOLD + "We Provide Three Planar Pushing Scenes:\n" + TerminalColors.ENDC)
+    print(TerminalColors.BOLD + "1) We Push Planar To Random Targets Without Obstacle.\n" + TerminalColors.ENDC)
+    print(TerminalColors.BOLD + "2) We Push Planar With Obstacle In Easier Position.\n" + TerminalColors.ENDC)
+    print(TerminalColors.BOLD + "3) We Push Planar With Obstacle In Harder Position.\n" + TerminalColors.ENDC)
+    print(TerminalColors.BOLD + "Please Type Enter For Each Scenes To Start!\n" + TerminalColors.ENDC)
+    print(TerminalColors.BOLD + "====================================" + TerminalColors.ENDC)
 
-    if not os.path.exists(args.logdir):
-        os.mkdir(args.logdir)
 
-    device = "cuda:0" if torch.cuda.is_available() and args.cuda else "cpu"
+    EPOCH = 5
+    RENDER = True
+    LOGDIR = "logs/"
+
+    if not os.path.exists(LOGDIR):
+        os.mkdir(LOGDIR)
+
+    # DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
+    DEVICE = "cpu"
     
-    if args.test:
-        args.epoch = 10
-        args.logdir = "logs/test/free"
+    print(TerminalColors.OKGREEN + f"Start Free pushing with random targets for {EPOCH} epoch(s)!" + TerminalColors.ENDC)
+    print(TerminalColors.OKGREEN + f"Note that the visualization window may lay at the bottom!" + TerminalColors.ENDC)
+    confirm_message = TerminalColors.OKGREEN + "Please Enter to continue..." + TerminalColors.ENDC
+    confirm = input(confirm_message)
+    print("Confirmed")
+    print_visualization_warning()
+    time.sleep(2)
 
-        test_param_obs = []
-        test_param_ours_obs = [0.12118153, 0.768279705, 0.332457308, 7.487837782]
-        test_param_cma_obs = [0.12118153, 0.768279705, 0.332457308, 7.487837782]
-        test_param_bayref_obs = [0.12118153, 0.768279705, 0.332457308, 7.487837782]
-        test_param_obs.append(test_param_ours_obs)
-        test_param_obs.append(test_param_cma_obs)
-        test_param_obs.append(test_param_bayref_obs)
+    test_param_ours_obs = [0.05474454, 5.137514, 1.3101447, 8.374978]
 
-
-        for i in test_param_obs:
-            test_obs = PandaBoxPushingStudy(args.epoch, args.render, args.logdir, 
-                                            study_name="test", 
-                                            include_obstacle=True, 
-                                            random_target=False,
-                                            opt_type="test", 
-                                            step_scale=0.1, 
-                                            device=device,
-                                            test_params=i)
-            test_obs.run()
-            test_obs.plot_results()
-
-        test_param_free = []
-        test_param_ours_free = [0.12118153, 0.768279705, 0.332457308, 7.487837782]
-        test_param_cma_free = [0.12118153, 0.768279705, 0.332457308, 7.487837782]
-        test_param_bayref_free = [0.12118153, 0.768279705, 0.332457308, 7.487837782]
-        test_param_free.append(test_param_ours_free)
-        test_param_free.append(test_param_cma_free)
-        test_param_free.append(test_param_bayref_free)
-
-        for i in test_param_free:
-            test_free = PandaBoxPushingStudy(args.epoch, args.render, args.logdir, 
-                                            study_name="test", 
-                                            include_obstacle=False, 
-                                            random_target=True,
-                                            opt_type="test", 
-                                            step_scale=0.1, 
-                                            device=device,
-                                            test_params=i)
-            test_free.run()
-            test_free.plot_results()
-
+    test_free = PandaBoxPushingStudy(EPOCH, RENDER, LOGDIR, 
+                                    study_name="test", 
+                                    include_obstacle=False, 
+                                    random_target=True,
+                                    opt_type="test", 
+                                    step_scale=0.1, 
+                                    device=DEVICE,
+                                    test_params=test_param_ours_obs)
+    test_free.run()
     
+
+    print(TerminalColors.OKGREEN + f"Start Obstacle pushing Easy Mode for {EPOCH} epoch(s)!" + TerminalColors.ENDC)
+    print(TerminalColors.OKGREEN + f"Note that the visualization window may lay at the bottom!" + TerminalColors.ENDC)
+    confirm_message = TerminalColors.OKGREEN + "Please Enter to continue..." + TerminalColors.ENDC
+    confirm = input(confirm_message)
+    print("Confirmed")
+    print_visualization_warning()
+    time.sleep(2)
+
+    test_obs = PandaBoxPushingStudy(EPOCH, RENDER, LOGDIR, 
+                                    study_name="test", 
+                                    include_obstacle=True, 
+                                    random_target=False,
+                                    target_state=np.array([0.8, -0.1, 0]),
+                                    opt_type="test", 
+                                    step_scale=0.1, 
+                                    device=DEVICE,
+                                    test_params=test_param_ours_obs)
+    test_obs.run()
+
+
+    print(TerminalColors.OKGREEN + f"Start Obstacle pushing Hard Mode for {EPOCH} epoch(s)!" + TerminalColors.ENDC)
+    print(TerminalColors.OKGREEN + f"Note that the visualization window may lay at the bottom!" + TerminalColors.ENDC)
+    confirm_message = TerminalColors.OKGREEN + "Please Enter to continue..." + TerminalColors.ENDC
+    confirm = input(confirm_message)
+    print("Confirmed")
+    print_visualization_warning()
+    time.sleep(2)
+
+    test_obs = PandaBoxPushingStudy(EPOCH, RENDER, LOGDIR, 
+                                    study_name="test", 
+                                    include_obstacle=True, 
+                                    random_target=False,
+                                    opt_type="test", 
+                                    step_scale=0.1, 
+                                    device=DEVICE,
+                                    test_params=test_param_ours_obs)
+    test_obs.run()

@@ -210,7 +210,7 @@ class PandaBoxPushingStudy:
         self._render = render
         self._log_dir = logdir
         self._random_target = True if not include_obstacle and random_target else False
-        self._target_state = target_state
+        self._target_state = np.array([0.7, 0., 0.]) if target_state is None else target_state
         self._opt_type = opt_type
         self.test_params = test_params
 
@@ -225,7 +225,7 @@ class PandaBoxPushingStudy:
         cost_func = obstacle_avoidance_pushing_cost_function if include_obstacle else free_pushing_cost_function
 
         self._optimizer = UnifiedBlackboxOptimizer(opt_type, param_dict, device)
-        self._target_state = np.array([0.7, 0., 0.])
+        # self._target_state = np.array([0.7, 0., 0.])
 
         self._step_scale = step_scale
         self._goal_scale = goal_scale

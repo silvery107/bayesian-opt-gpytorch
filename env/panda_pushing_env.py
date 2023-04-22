@@ -38,12 +38,21 @@ class PandaPushingEnv(gym.Env):
         self.include_obstacle = include_obstacle
         self.render_every_n_steps = render_every_n_steps
         self.target_state = None
-
+        
         if debug:
             p.connect(p.GUI)
         else:
             p.connect(p.DIRECT, options="--opengl2")
         p.setAdditionalSearchPath(pd.getDataPath())
+
+        # if debug:
+        #     # 获取 PyBullet 窗口并置顶
+        #     try:
+        #         pybullet_window_title = "Bullet Physics ExampleBrowser using OpenGL3+ [btgl] Release build"  # 根据实际情况修改 PyBullet 窗口标题
+        #         pybullet_window = gw.getWindowsWithTitle(pybullet_window_title)[0]  # 获取 PyBullet 窗口
+        #         pybullet_window.activate()  # 置顶 PyBullet 窗口
+        #     except IndexError:
+        #         print(f"No window with title '{pybullet_window_title}' was found. Please check the window title.")
 
         self.episode_step_counter = 0
         self.episode_counter = 0

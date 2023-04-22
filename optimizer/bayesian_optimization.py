@@ -75,7 +75,7 @@ class BayesianOptimization:
         self._noise_level = 1e-3
         self._model_lr = 0.1
         self._model_epoch = 50
-        self.reset_seed(seed)
+        # self.reset_seed(seed)
     
     def minimize(self, objective, n_iter:int):
         assert n_iter > self.n_warmup
