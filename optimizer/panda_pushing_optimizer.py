@@ -87,7 +87,7 @@ class PushingLogger:
         self.reset()
         load_path = os.path.join(log_dir, filename)
         with open(load_path, "r", newline='') as f:
-            reader = csv.reader(f)
+            reader = csv.reader(f, quoting=csv.QUOTE_NONNUMERIC)
             for row in reader:
                 self.costs.append(row[0])
                 self.steps.append(row[1])
