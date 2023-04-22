@@ -3,6 +3,6 @@ gpytorch==1.9.1
 matplotlib==3.6.2
 numpy==1.24.2
 torch==1.13.1
-tqdm==4.64.1
-pybullet==3.21
-time
+tqdm
+pybullet
+bayesian-optimization==1.4.2
