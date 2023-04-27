@@ -1,4 +1,4 @@
-# Bayesian Optimization for MPPI Control of Robot Arm Planar Pushing
+# Bayesian Optimization for MPPI Planar Pushing
 
 In this project, we implement the Bayesian Optimization Algorithm (BOA) for autotuning the hyperparameters of Model Predictive Path Integral (MPPI) control to solve a planar box pushing task with non-trivial obstacles.
 
