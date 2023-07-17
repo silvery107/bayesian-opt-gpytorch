@@ -13,18 +13,24 @@ In this project, we implement the Bayesian Optimization Algorithm (BOA) for auto
 2. Run our demo using `python demo.py`. 
    Instructions and results will be printed in the terminal and a live pushing demo should show up in pybullet GUI.
 
+## API for Easy BOA Application
+This implementation provides an easy-to-use Bayesian optimizer with full GPU pipeline support. The optimization results are at least comparable to the most popular BOA implementation in python.
+
+Check [here](https://github.com/silvery107/bayesian-opt-gpytorch/blob/078caf3534b1f92a9d2d2cc7d2d135b08fa8db8d/optimizer/panda_pushing_optimizer.py#L123) for more details.
+
+<img src="figures/bayesian_demo.png" width="500">
+
+
 ## Dependencies
 
 - Python >= 3.8
-- PyTorch >= 1.11
-- GPytorch >= 1.9.1
-- cma >= 3.3.0
-- bayesian-optimization >= 1.4.2
+- [PyTorch >= 1.11](https://pytorch.org/get-started/previous-versions/)
+- [GPytorch >= 1.9.1](https://github.com/cornellius-gp/gpytorch)
 
 ## Reference
-**BOA Algorithm**
+**BOA**
 
-<img src="figures/boa_pseudo.png" width="500">
+<img src="figures/bayesian_opt_algorithm.png" width="500">
 
 > f: objective function <br>
 > X: support of variables <br>
@@ -35,13 +41,6 @@ In this project, we implement the Bayesian Optimization Algorithm (BOA) for auto
 > y: observation <br>
 
 
-**Github Repository**
-- [Bayesian machine learning notebooks](https://github.com/krasserm/bayesian-machine-learning) 1.6k
-- [Python implementation of bayesian global optimization](https://github.com/fmfn/BayesianOptimization) 6.6k
-- [BoTorch](https://github.com/pytorch/botorch) 2.6k
-- [GPyTorch](https://github.com/cornellius-gp/gpytorch) 3k
-- [pycma](https://github.com/CMA-ES/pycma)
+**MPPI**
 
-**Others**
-- [Bayesian optimization wiki](https://en.wikipedia.org/wiki/Bayesian_optimization)
-- [Example blog](https://gdmarmerola.github.io/ts-for-bayesian-optim/)
+<img src="figures/MPPI_algorithm.png" width="500">
