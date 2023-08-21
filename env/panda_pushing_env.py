@@ -2,7 +2,8 @@ from abc import abstractmethod
 import gym
 from gym import spaces
 
-import os, inspect
+import os
+import cv2
 
 import pybullet as p
 import pybullet_data as pd
@@ -56,7 +57,6 @@ class PandaPushingEnv(gym.Env):
 
         self.episode_step_counter = 0
         self.episode_counter = 0
-        self.frames = []
 
         self.pandaUid = None  # panda robot arm
         self.tableUid = None  # Table where to push
@@ -287,18 +287,13 @@ class PandaPushingEnv(gym.Env):
         if self.debug:
             pass
         elif self.visualizer is not None:
-            if self.is_render_on:
-                rgb_img = self.render_image(camera_pos=[0.55, -0.35, 0.2],
-                                            camera_orn=[0, -40, 0],
-                                            camera_width=self.camera_width,
-                                            camera_height=self.camera_height,
-                                            distance=1.5)
-                rgb_img = rgb_img.transpose(1, 2, 0)
-                self.frames.append(rgb_img)
-                if self.visualizer is not None:
-                    self.visualizer.set_data(rgb_img)
-        else:
-            pass
+            rgb_img = self.render_image(camera_pos=[0.55, -0.35, 0.2],
+                                        camera_orn=[0, -40, 0],
+                                        camera_width=self.camera_width,
+                                        camera_height=self.camera_height,
+                                        distance=1.5)
+            rgb_img = rgb_img.transpose(1, 2, 0)
+            self.visualizer.set_data(cv2.resize(rgb_img, (200, 200)))
     
     def disconnect(self):
         p.disconnect()

@@ -4,7 +4,6 @@ import numpy as np
 import torch
 import csv
 from time import time
-import matplotlib.pyplot as plt
 
 from bayes_opt import UtilityFunction
 from bayes_opt import BayesianOptimization as BayesOpt
@@ -203,7 +202,8 @@ class PandaBoxPushingStudy:
                  include_obstacle=False, 
                  random_target=False, target_state=None, 
                  opt_type="bayes", device="cpu", 
-                 step_scale=0.1, goal_scale=10., test_params = [1e-2, 2.5, 2.5, 2.5]):
+                 step_scale=0.1, goal_scale=10., test_params = [1e-2, 2.5, 2.5, 2.5],
+                 visualizer=None):
         # TODO set obstacle pose?
         self._epoch = epoch
         self._n_step = 20
@@ -236,7 +236,7 @@ class PandaBoxPushingStudy:
         self._dynamics_model.eval()
 
         self._env = PandaBoxPushingEnv(debug=render, include_obstacle=include_obstacle, render_non_push_motions=False, 
-                                 camera_heigh=800, camera_width=800, render_every_n_steps=5)
+                                 camera_heigh=800, camera_width=800, render_every_n_steps=20, visualizer=visualizer)
         self._controller = PushingController(self._env, self._dynamics_model,
                                             cost_func, 
                                             num_samples=1000, horizon=20,
