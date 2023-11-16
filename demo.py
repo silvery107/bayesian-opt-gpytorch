@@ -8,9 +8,8 @@
 
 import torch
 import os
-import argparse
 from optimizer.panda_pushing_optimizer import PandaBoxPushingStudy
-import argparse
+from env.visualizers import GIFVisualizer
 import numpy as np
 import time
 import random
@@ -67,6 +66,7 @@ if __name__ == "__main__":
 
     # DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
     DEVICE = "cpu"
+    visualizer = GIFVisualizer()
     
     print(TerminalColors.OKGREEN + f"Start Free pushing with random targets for {EPOCH} epoch(s)!" + TerminalColors.ENDC)
     print(TerminalColors.OKGREEN + f"Note that the visualization window may lay at the bottom!" + TerminalColors.ENDC)
@@ -78,6 +78,7 @@ if __name__ == "__main__":
 
     test_param_ours_obs = [0.05474454, 5.137514, 1.3101447, 8.374978]
 
+    # visualizer.reset()
     test_free = PandaBoxPushingStudy(EPOCH, RENDER, LOGDIR, 
                                     study_name="test", 
                                     include_obstacle=False, 
@@ -85,8 +86,11 @@ if __name__ == "__main__":
                                     opt_type="test", 
                                     step_scale=0.1, 
                                     device=DEVICE,
-                                    test_params=test_param_ours_obs)
+                                    test_params=test_param_ours_obs,
+                                    visualizer=visualizer)
     test_free.run()
+    # visualizer.repeat_last_frame()
+    # visualizer.get_gif("test_free.gif")
     
 
     print(TerminalColors.OKGREEN + f"Start Obstacle pushing Easy Mode for {EPOCH} epoch(s)!" + TerminalColors.ENDC)
@@ -97,6 +101,7 @@ if __name__ == "__main__":
     print_visualization_warning()
     time.sleep(2)
 
+    # visualizer.reset()
     test_obs = PandaBoxPushingStudy(EPOCH, RENDER, LOGDIR, 
                                     study_name="test", 
                                     include_obstacle=True, 
@@ -105,8 +110,11 @@ if __name__ == "__main__":
                                     opt_type="test", 
                                     step_scale=0.1, 
                                     device=DEVICE,
-                                    test_params=test_param_ours_obs)
+                                    test_params=test_param_ours_obs,
+                                    visualizer=visualizer)
     test_obs.run()
+    # visualizer.repeat_last_frame()
+    # visualizer.get_gif("test_obs_easy.gif")
 
 
     print(TerminalColors.OKGREEN + f"Start Obstacle pushing Hard Mode for {EPOCH} epoch(s)!" + TerminalColors.ENDC)
@@ -117,6 +125,7 @@ if __name__ == "__main__":
     print_visualization_warning()
     time.sleep(2)
 
+    # visualizer.reset()
     test_obs = PandaBoxPushingStudy(EPOCH, RENDER, LOGDIR, 
                                     study_name="test", 
                                     include_obstacle=True, 
@@ -124,5 +133,8 @@ if __name__ == "__main__":
                                     opt_type="test", 
                                     step_scale=0.1, 
                                     device=DEVICE,
-                                    test_params=test_param_ours_obs)
+                                    test_params=test_param_ours_obs,
+                                    visualizer=visualizer)
     test_obs.run()
+    # visualizer.repeat_last_frame()
+    # visualizer.get_gif("test_obs_hard.gif")
