@@ -263,9 +263,6 @@ class PandaBoxPushingStudy:
             print(f"Testing box pushing optimizer with {status} target for {self._epoch} epochs")
             parameters = self.test_params
             for _ in range(self._epoch):
-                suggest_time = time()
-                self._logger.update_time(suggest_time)
-                    # Run trial
                 if self._random_target:
                     target_state = get_random_target_state()
                 end_state, pushing_step = run_pushing_task(self._env, self._controller, self._n_step, target_state, parameters)
@@ -297,8 +294,8 @@ class PandaBoxPushingStudy:
 
             optimized_param = self._optimizer.get_result()
             self._optimizer.print_result()
+            self._logger.save(self._log_dir, optimized_param)
 
-        self._logger.save(self._log_dir, optimized_param)
         if self._render:
             self._env.disconnect()
 

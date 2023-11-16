@@ -7,4 +7,4 @@ tqdm
 pybullet
 bayesian-optimization
 gym
-numpngw
+imageio

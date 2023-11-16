@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
-import numpngw
-
+import imageio
 
 class GIFVisualizer(object):
     def __init__(self):
@@ -12,10 +11,15 @@ class GIFVisualizer(object):
     def reset(self):
         self.frames = []
 
+    def repeat_last_frame(self):
+        # repeat last frame for clear view of the final state
+        self.frames.append(self.frames[-1]) 
+
     def get_gif(self, filename='pushing_visualization.gif'):
         # generate the gif
-        print(f"Creating animated gif {filename}, please wait about 10 seconds")
-        numpngw.write_apng(filename, self.frames, delay=10)
+        print(f"Creating animated gif {filename}...")
+        imageio.mimsave(filename, self.frames, format="GIF", duration=0.01)
+        print("Done!")
         return filename
 
 
