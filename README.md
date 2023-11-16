@@ -3,7 +3,7 @@
 In this project, we implement the Bayesian Optimization Algorithm (BOA) for autotuning the hyperparameters of Model Predictive Path Integral (MPPI) control to solve a planar box pushing task with non-trivial obstacles.
 
 <p align="left">
-<img src="figures/box_pushing_obstacle.png" width="400">
+<img src="figures/bayesian_pushing_demo.gif" width="400">
 <img src="figures/noise_sigma.png" width="400">
 </p>
 
