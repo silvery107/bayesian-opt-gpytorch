@@ -285,7 +285,7 @@ class PandaPushingEnv(gym.Env):
                                         camera_height=self.camera_height,
                                         distance=1.5)
             rgb_img = rgb_img.transpose(1, 2, 0)
-            self.visualizer.set_data(rgb_img)
+            self.visualizer.set_data(rgb_img[50:660,])
     
     def disconnect(self):
         p.disconnect()
